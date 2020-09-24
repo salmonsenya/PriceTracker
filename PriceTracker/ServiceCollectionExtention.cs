@@ -1,6 +1,7 @@
 ﻿using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using PriceTracker.Clients;
+using PriceTracker.Services;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -13,6 +14,12 @@ namespace PriceTracker
         public static void AddHttpClients(this IServiceCollection services, IConfiguration configuration)
         {
             services.AddHttpClient<IASOSClient, ASOSClient>();
+        }
+
+        public static void AddServices(this IServiceCollection services, IConfiguration configuration)
+        {
+            services.AddSingleton<IBotService, BotService>();
+            services.AddScoped<IUpdateService, UpdateService>();
         }
     }
 }

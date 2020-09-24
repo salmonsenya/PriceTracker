@@ -27,8 +27,10 @@ namespace PriceTracker
         public void ConfigureServices(IServiceCollection services)
         {
             services.AddControllers();
+            services.Configure<BotOptions>(Configuration.GetSection("BotOptions"));
             services.Configure<ASOSApiOptions>(Configuration.GetSection("ASOSApiOptions"));
             services.AddHttpClients(Configuration);
+            services.AddServices(Configuration);
         }
 
         // This method gets called by the runtime. Use this method to configure the HTTP request pipeline.
