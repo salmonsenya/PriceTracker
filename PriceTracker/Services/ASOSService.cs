@@ -3,6 +3,7 @@ using PriceTracker.Models;
 using PriceTracker.Repositories;
 using System;
 using System.Collections.Generic;
+using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 using System.Timers;
 using Telegram.Bot.Types;
@@ -36,13 +37,21 @@ namespace PriceTracker.Services
             var item = itemsQueue.Dequeue();
             var result =  _asosClient.GetItemInfoAsync(item.Url).Result;
             _trackingRepository.UpdateInfoOfItemAsync(item.ItemId, result.Status, result.Price);
+            if (item.Status != result.Status || item.Price != result.Price)
+            {
+                _botService.Client.SendTextMessageAsync(
+                    chatId: item.ChatId,
+                    text: "Item has been changed.");
+            }
+            item.Status = result.Status;
+            item.Price = result.Price;
             itemsQueue.Enqueue(item);
         }
 
         public async Task AddNewItemAsync(Message message)
         {
             var input = message.Text;
-            var url = "";
+            var url = Regex.Match(input, @"(http|ftp|https):\/\/([\w\-_]+(?:(?:\.[\w\-_]+)+))([\w\-\.,@?^=%&amp;:/~\+#]*[\w\-\@?^=%&amp;/~\+#])?").Value;
 
             if (await _trackingRepository.IsTracked(url))
             {
@@ -58,7 +67,9 @@ namespace PriceTracker.Services
                     Url = url,
                     Status = null,
                     Price = null,
-                    SatrtTrackingDate = DateTime.Now
+                    SatrtTrackingDate = DateTime.Now,
+                    Source = "ASOS",
+                    ChatId = message.Chat.Id,
                 };
                 itemsQueue.Enqueue(newItem);
                 await _trackingRepository.AddNewItemAsync(newItem);

@@ -13,5 +13,9 @@ namespace PriceTracker.Models
         public int? Price { get; set; }
 
         public DateTime SatrtTrackingDate { get; set; }
+
+        public string Source { get; set; }
+
+        public long ChatId { get; set; }
     }
 }

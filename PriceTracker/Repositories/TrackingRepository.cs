@@ -8,41 +8,32 @@ namespace PriceTracker.Repositories
 {
     public class TrackingRepository : ITrackingRepository
     {
-        public async Task AddNewItemAsync(Item item)
+
+        private readonly TrackingContext _trackingContext;
+
+        public TrackingRepository(TrackingContext trackingContext)
         {
-            using (var db = new TrackingContext())
-            {
-                db.Items.Add(item);
-                await db.SaveChangesAsync();
-            }
+            _trackingContext = trackingContext ?? throw new ArgumentNullException(nameof(trackingContext));
         }
 
-        public async Task<List<Item>> GetItems()
+        public async Task AddNewItemAsync(Item item)
         {
-            using (var db = new TrackingContext())
-            {
-                return db.Items.ToList();
-            }
+            _trackingContext.Items.Add(item);
+            await _trackingContext.SaveChangesAsync();
         }
+
+        public async Task<List<Item>> GetItems() => 
+            _trackingContext.Items.ToList();
 
         public async Task UpdateInfoOfItemAsync(int id, string status, int? price)
         {
-            using (var db = new TrackingContext())
-            {
-                var item = db.Items.Where(i => i.ItemId == id).FirstOrDefault();
-                item.Status = status;
-                item.Price = price;
-                await db.SaveChangesAsync();
-            }
+            var item = _trackingContext.Items.Where(i => i.ItemId == id).FirstOrDefault();
+            item.Status = status;
+            item.Price = price;
+            await _trackingContext.SaveChangesAsync();
         }
 
-        public async Task<bool> IsTracked(string url)
-        {
-            using (var db = new TrackingContext())
-            {
-                var result = db.Items.Where(i => i.Url.Equals(url)).ToList();
-                return result.Count > 0;
-            }
-        }
+        public async Task<bool> IsTracked(string url) => 
+            _trackingContext.Items.Where(i => i.Url.Equals(url)).ToList().Count > 0;
     }
 }
