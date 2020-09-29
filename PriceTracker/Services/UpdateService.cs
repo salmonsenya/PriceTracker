@@ -1,4 +1,6 @@
 ﻿using System;
+using System.Linq;
+using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 using Telegram.Bot.Types;
 using Telegram.Bot.Types.Enums;
@@ -7,12 +9,12 @@ namespace PriceTracker.Services
 {
     public class UpdateService : IUpdateService
     {
-        private readonly IBotService _botService;
-        
 
-        public UpdateService(IBotService botService)
+        private readonly IASOSService _asosService;
+
+        public UpdateService(IASOSService asosService)
         {
-            _botService = botService ?? throw new ArgumentNullException(nameof(botService));
+            _asosService = asosService ?? throw new ArgumentNullException(nameof(asosService));
         }
 
         public async Task ReplyAsync(Update update)
@@ -21,6 +23,18 @@ namespace PriceTracker.Services
                 return;
 
             var message = update.Message;
+            if (message.Type == MessageType.Text)
+            {
+                var input = message.Text;
+                if (input != null)
+                {
+                    var addRegex = new Regex(@"^(/add )");
+                    if (addRegex.IsMatch(input))
+                    {
+                        await _asosService.AddNewItemAsync(message);
+                    }
+                }
+            }
         }
     }
 }

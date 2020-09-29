@@ -1,6 +1,7 @@
 ﻿using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using PriceTracker.Clients;
+using PriceTracker.Repositories;
 using PriceTracker.Services;
 using System;
 using System.Collections.Generic;
@@ -20,6 +21,8 @@ namespace PriceTracker
         {
             services.AddSingleton<IBotService, BotService>();
             services.AddScoped<IUpdateService, UpdateService>();
+            services.AddSingleton<IASOSService, ASOSService>();
+            services.AddSingleton<ITrackingRepository, TrackingRepository>();
         }
     }
 }
