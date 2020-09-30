@@ -34,18 +34,21 @@ namespace PriceTracker.Services
 
         private void OnTimedEvent(Object source, ElapsedEventArgs e)
         {
-            var item = itemsQueue.Dequeue();
-            var result =  _asosClient.GetItemInfoAsync(item.Url).Result;
-            _trackingRepository.UpdateInfoOfItemAsync(item.ItemId, result.Status, result.Price);
-            if (item.Status != result.Status || item.Price != result.Price)
+            if (itemsQueue.Count > 0)
             {
-                _botService.Client.SendTextMessageAsync(
-                    chatId: item.ChatId,
-                    text: "Item has been changed.");
+                var item = itemsQueue.Dequeue();
+                var result = _asosClient.GetItemInfoAsync(item.Url).Result;
+                _trackingRepository.UpdateInfoOfItemAsync(item.ItemId, result.Status, result.Price);
+                if (item.Status != result.Status || item.Price != result.Price)
+                {
+                    _botService.Client.SendTextMessageAsync(
+                        chatId: item.ChatId,
+                        text: "Item has been changed.");
+                }
+                item.Status = result.Status;
+                item.Price = result.Price;
+                itemsQueue.Enqueue(item);
             }
-            item.Status = result.Status;
-            item.Price = result.Price;
-            itemsQueue.Enqueue(item);
         }
 
         public async Task AddNewItemAsync(Message message)
@@ -71,7 +74,7 @@ namespace PriceTracker.Services
                     Source = "ASOS",
                     ChatId = message.Chat.Id,
                 };
-                itemsQueue.Enqueue(newItem);
+                // itemsQueue.Enqueue(newItem);
                 await _trackingRepository.AddNewItemAsync(newItem);
                 await _botService.Client.SendTextMessageAsync(
                     chatId: message.Chat.Id,
