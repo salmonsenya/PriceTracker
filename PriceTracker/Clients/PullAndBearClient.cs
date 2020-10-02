@@ -5,38 +5,35 @@ using PriceTracker.Helpers;
 using PriceTracker.Models;
 using System;
 using System.Net.Http;
-using System.Text;
 using System.Threading.Tasks;
 
 namespace PriceTracker.Clients
 {
-    public class ASOSClient : IASOSClient
+    public class PullAndBearClient : IPullAndBearClient
     {
         private HttpClient _httpClient;
         private readonly IParserHelper _parserHelper;
 
-        public ASOSClient(HttpClient httpClient, IOptions<ASOSApiOptions> options, IParserHelper parserHelper)
+        public PullAndBearClient(HttpClient httpClient, IOptions<PullAndBearApiOptions> options, IParserHelper parserHelper)
         {
             _httpClient = httpClient ?? throw new ArgumentNullException(nameof(httpClient));
             _parserHelper = parserHelper ?? throw new ArgumentNullException(nameof(parserHelper));
         }
 
-        public async Task<TrackingStatus> GetItemInfoAsync(string paramUrl)
+        public async Task<TrackingStatus> GetItemInfoAsync(int itemId, string url)
         {
-            var url = $@"";
-            var data = JsonConvert.SerializeObject(paramUrl);
-            var content = new StringContent(data, Encoding.UTF8, "application/json");
-
-            using (var httpResponseMessage = await _httpClient.PostAsync(new Uri(url), content))
+            _httpClient.DefaultRequestHeaders.Add("Accept", "*/*");
+            _httpClient.DefaultRequestHeaders.Add("Connection", "keep-alive");
+            using (var httpResponseMessage = await _httpClient.GetAsync(new Uri(url)))
             {
                 if (!httpResponseMessage.IsSuccessStatusCode)
                 {
                     throw new Exception("The HTTP status code of the response was not expected (" + httpResponseMessage.StatusCode + ").");
                 }
                 var responseString = await httpResponseMessage.Content.ReadAsStringAsync();
-                var itemInfo = await _parserHelper.GetItemInfoAsync(responseString);
+                var itemInfo = await _parserHelper.GetItemInfoAsync(itemId, responseString);
 
-                return null;
+                return itemInfo;
             }
         }
     }

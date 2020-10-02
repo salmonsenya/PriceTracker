@@ -5,6 +5,6 @@ namespace PriceTracker.Helpers
 {
     public interface IParserHelper
     {
-        Task<TrackingStatus> GetItemInfoAsync(string input);
+        Task<TrackingStatus> GetItemInfoAsync(int itemId, string input);
     }
 }

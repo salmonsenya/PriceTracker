@@ -10,23 +10,27 @@ using Telegram.Bot.Types;
 
 namespace PriceTracker.Services
 {
-    public class ASOSService : IASOSService
+    public class PullAndBearService : IPullAndBearService
     {
         private readonly IBotService _botService;
         private readonly ITrackingRepository _trackingRepository;
-        private readonly IASOSClient _asosClient;
+        private readonly IPullAndBearClient _pullAndBearClient;
 
         private Queue<Item> itemsQueue;
         private Timer timer;
 
-        public ASOSService(IBotService botService, ITrackingRepository trackingRepository, IASOSClient asosClient)
+        public PullAndBearService(IBotService botService, ITrackingRepository trackingRepository, IPullAndBearClient asosClient)
         {
             _botService = botService ?? throw new ArgumentNullException(nameof(botService));
             _trackingRepository = trackingRepository ?? throw new ArgumentNullException(nameof(trackingRepository));
-            _asosClient = asosClient ?? throw new ArgumentNullException(nameof(asosClient));
+            _pullAndBearClient = asosClient ?? throw new ArgumentNullException(nameof(asosClient));
+            SetQueueAndTimer();
+        }
 
+        private void SetQueueAndTimer()
+        {
             itemsQueue = new Queue<Item>();
-            timer = new Timer(2000); // 2 sec
+            timer = new Timer(2000); // 4 sec
             timer.Elapsed += OnTimedEvent;
             timer.AutoReset = true;
             timer.Enabled = true;
@@ -37,31 +41,35 @@ namespace PriceTracker.Services
             if (itemsQueue.Count > 0)
             {
                 var item = itemsQueue.Dequeue();
-                var result = _asosClient.GetItemInfoAsync(item.Url).Result;
-                _trackingRepository.UpdateInfoOfItemAsync(item.ItemId, result.Status, result.Price);
-                if (item.Status != result.Status || item.Price != result.Price)
+                var newInfo = _pullAndBearClient.GetItemInfoAsync(item.ItemId, item.Url).Result;
+                var newItem = _trackingRepository.UpdateInfoOfItemAsync(item.ItemId, newInfo.Status, newInfo.Price, newInfo.PriceCurrency).Result;
+                if (item.Status != newInfo.Status || item.Price != newInfo.Price)
                 {
-                    _botService.Client.SendTextMessageAsync(
-                        chatId: item.ChatId,
-                        text: "Item has been changed.");
+                    /*_botService.Client.SendTextMessageAsync(
+                        chatId: item.ChatId, 
+                        text: "Item has been changed.");*/
                 }
-                item.Status = result.Status;
-                item.Price = result.Price;
+                item.Status = newInfo.Status;
+                item.Price = newInfo.Price;
+                item.PriceCurrency = newInfo.PriceCurrency;
                 itemsQueue.Enqueue(item);
             }
         }
 
         public async Task AddNewItemAsync(Message message)
         {
+            var existedItems = _trackingRepository.GetItems();
+            itemsQueue = existedItems.Count > 0 ? new Queue<Item>(existedItems) : new Queue<Item>();
+
             var input = message.Text;
             var url = Regex.Match(input, @"(http|ftp|https):\/\/([\w\-_]+(?:(?:\.[\w\-_]+)+))([\w\-\.,@?^=%&amp;:/~\+#]*[\w\-\@?^=%&amp;/~\+#])?").Value;
 
             if (await _trackingRepository.IsTracked(url))
             {
-                await _botService.Client.SendTextMessageAsync(
+                /*await _botService.Client.SendTextMessageAsync(
                     chatId: message.Chat.Id,
                     replyToMessageId: message.MessageId,
-                    text: "Item is already added for tracking.");
+                    text: "Item is already added for tracking.");*/
             }
             else
             {
@@ -70,16 +78,20 @@ namespace PriceTracker.Services
                     Url = url,
                     Status = null,
                     Price = null,
-                    SatrtTrackingDate = DateTime.Now,
-                    Source = "ASOS",
+                    StartTrackingDate = DateTime.Now,
+                    Source = "Pull&Bear",
                     ChatId = message.Chat.Id,
                 };
-                // itemsQueue.Enqueue(newItem);
-                await _trackingRepository.AddNewItemAsync(newItem);
-                await _botService.Client.SendTextMessageAsync(
+
+                var itemId = await _trackingRepository.AddNewItemAsync(newItem);
+                newItem.ItemId = itemId;
+                itemsQueue.Enqueue(newItem);
+                
+
+                /*await _botService.Client.SendTextMessageAsync(
                     chatId: message.Chat.Id,
                     replyToMessageId: message.MessageId,
-                    text: "Item was added for tracking.");
+                    text: "Item was added for tracking.");*/
             }
         }
     }

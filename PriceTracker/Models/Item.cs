@@ -12,7 +12,9 @@ namespace PriceTracker.Models
 
         public int? Price { get; set; }
 
-        public DateTime SatrtTrackingDate { get; set; }
+        public string PriceCurrency { get; set; }
+
+        public DateTime StartTrackingDate { get; set; }
 
         public string Source { get; set; }
 

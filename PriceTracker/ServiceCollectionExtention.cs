@@ -11,7 +11,7 @@ namespace PriceTracker
     {
         public static void AddHttpClients(this IServiceCollection services, IConfiguration configuration)
         {
-            services.AddHttpClient<IASOSClient, ASOSClient>();
+            services.AddHttpClient<IPullAndBearClient, PullAndBearClient>();
         }
 
         public static void AddServices(this IServiceCollection services, IConfiguration configuration)
@@ -19,7 +19,7 @@ namespace PriceTracker
             services.AddSingleton<IParserHelper, ParserHelper>();
             services.AddSingleton<IBotService, BotService>();
             services.AddScoped<ITrackingRepository, TrackingRepository>();
-            services.AddScoped<IASOSService, ASOSService>();
+            services.AddScoped<IPullAndBearService, PullAndBearService>();
             services.AddScoped<IUpdateService, UpdateService>();
         }
     }

@@ -17,7 +17,8 @@ namespace PriceTracker.Migrations
                     Url = table.Column<string>(nullable: true),
                     Status = table.Column<string>(nullable: true),
                     Price = table.Column<int>(nullable: true),
-                    SatrtTrackingDate = table.Column<DateTime>(nullable: false),
+                    PriceCurrency = table.Column<string>(nullable: true),
+                    StartTrackingDate = table.Column<DateTime>(nullable: false),
                     Source = table.Column<string>(nullable: true),
                     ChatId = table.Column<long>(nullable: false)
                 },

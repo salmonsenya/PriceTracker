@@ -29,11 +29,14 @@ namespace PriceTracker.Migrations
                     b.Property<int?>("Price")
                         .HasColumnType("int");
 
-                    b.Property<DateTime>("SatrtTrackingDate")
-                        .HasColumnType("datetime(6)");
+                    b.Property<string>("PriceCurrency")
+                        .HasColumnType("longtext CHARACTER SET utf8mb4");
 
                     b.Property<string>("Source")
                         .HasColumnType("longtext CHARACTER SET utf8mb4");
+
+                    b.Property<DateTime>("StartTrackingDate")
+                        .HasColumnType("datetime(6)");
 
                     b.Property<string>("Status")
                         .HasColumnType("longtext CHARACTER SET utf8mb4");

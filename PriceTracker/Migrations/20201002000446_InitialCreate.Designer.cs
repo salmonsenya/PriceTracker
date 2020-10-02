@@ -9,7 +9,7 @@ using PriceTracker.Models;
 namespace PriceTracker.Migrations
 {
     [DbContext(typeof(TrackingContext))]
-    [Migration("20200929204541_InitialCreate")]
+    [Migration("20201002000446_InitialCreate")]
     partial class InitialCreate
     {
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
@@ -31,11 +31,14 @@ namespace PriceTracker.Migrations
                     b.Property<int?>("Price")
                         .HasColumnType("int");
 
-                    b.Property<DateTime>("SatrtTrackingDate")
-                        .HasColumnType("datetime(6)");
+                    b.Property<string>("PriceCurrency")
+                        .HasColumnType("longtext CHARACTER SET utf8mb4");
 
                     b.Property<string>("Source")
                         .HasColumnType("longtext CHARACTER SET utf8mb4");
+
+                    b.Property<DateTime>("StartTrackingDate")
+                        .HasColumnType("datetime(6)");
 
                     b.Property<string>("Status")
                         .HasColumnType("longtext CHARACTER SET utf8mb4");

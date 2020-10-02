@@ -23,7 +23,7 @@ namespace PriceTracker
         {
             services.AddControllers();
             services.Configure<BotOptions>(Configuration.GetSection("BotOptions"));
-            services.Configure<ASOSApiOptions>(Configuration.GetSection("ASOSApiOptions"));
+            services.Configure<PullAndBearApiOptions>(Configuration.GetSection("ASOSApiOptions"));
             services.AddHttpClients(Configuration);
             services.AddServices(Configuration);
             services.AddDbContext<TrackingContext>(options =>

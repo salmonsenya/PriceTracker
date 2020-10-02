@@ -7,5 +7,7 @@
         public string Status { get; set; }
 
         public int? Price { get; set; }
+
+        public string PriceCurrency { get; set; }
     }
 }

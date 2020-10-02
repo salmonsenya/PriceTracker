@@ -9,11 +9,11 @@ namespace PriceTracker.Services
     public class UpdateService : IUpdateService
     {
 
-        private readonly IASOSService _asosService;
+        private readonly IPullAndBearService _pullAndBearService;
 
-        public UpdateService(IASOSService asosService)
+        public UpdateService(IPullAndBearService asosService)
         {
-            _asosService = asosService ?? throw new ArgumentNullException(nameof(asosService));
+            _pullAndBearService = asosService ?? throw new ArgumentNullException(nameof(asosService));
         }
 
         public async Task ReplyAsync(Update update)
@@ -30,7 +30,7 @@ namespace PriceTracker.Services
                     var addRegex = new Regex(@"^(/add )");
                     if (addRegex.IsMatch(input))
                     {
-                        await _asosService.AddNewItemAsync(message);
+                        await _pullAndBearService.AddNewItemAsync(message);
                     }
                 }
             }
