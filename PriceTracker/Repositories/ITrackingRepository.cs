@@ -6,12 +6,12 @@ namespace PriceTracker.Repositories
 {
     public interface ITrackingRepository
     {
-        Task<int> AddNewItemAsync(Item item);
+        int AddNewItem(Item item);
 
         List<Item> GetItems();
 
-        Task<Item> UpdateInfoOfItemAsync(int id, string status, int? price, string priceCurrency);
+        void UpdateInfoOfItem(int id, string status, int? price, string priceCurrency);
 
-        Task<bool> IsTracked(string url);
+        bool IsTracked(string url);
     }
 }

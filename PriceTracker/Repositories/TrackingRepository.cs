@@ -1,4 +1,5 @@
-﻿using PriceTracker.Models;
+﻿using Microsoft.Extensions.Configuration;
+using PriceTracker.Models;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -8,37 +9,51 @@ namespace PriceTracker.Repositories
 {
     public class TrackingRepository : ITrackingRepository
     {
-
-        private readonly TrackingContext _trackingContext;
-
-        public TrackingRepository(TrackingContext trackingContext)
+        private readonly IConfiguration _configuration;
+        public TrackingRepository(IConfiguration configuration)
         {
-            _trackingContext = trackingContext ?? throw new ArgumentNullException(nameof(trackingContext));
+            _configuration = configuration ?? throw new ArgumentNullException();
         }
 
-        public async Task<int> AddNewItemAsync(Item item)
+        public int AddNewItem(Item item)
         {
-            _trackingContext.Items.Add(item);
-            await _trackingContext.SaveChangesAsync();
-            var result = _trackingContext.Items.Where(i => i.Url == item.Url).FirstOrDefault();
-            return result.ItemId;
+            using (var _trackingContext = new TrackingContext())
+            {
+                _trackingContext.Items.Add(item);
+                _trackingContext.SaveChanges();
+                var result = _trackingContext.Items.Where(i => i.Url == item.Url).FirstOrDefault();
+                return result.ItemId;
+            }
         }
 
-        public List<Item> GetItems() => 
-            _trackingContext.Items.ToList();
-
-        public async Task<Item> UpdateInfoOfItemAsync(int id, string status, int? price, string priceCurrency)
+        public List<Item> GetItems() {
+            using (var _trackingContext = new TrackingContext())
+            {
+                var items = _trackingContext.Items;
+                return items.ToList();
+            }
+        }
+          
+        public void UpdateInfoOfItem(int id, string status, int? price, string priceCurrency)
         {
-            var item = _trackingContext.Items.Where(i => i.ItemId == id).FirstOrDefault();
-            item.Status = status;
-            item.Price = price;
-            item.PriceCurrency = priceCurrency;
-            await _trackingContext.SaveChangesAsync();
-            var newItem = _trackingContext.Items.Where(i => i.ItemId == id).FirstOrDefault();
-            return newItem;
+            using (var _trackingContext = new TrackingContext())
+            {
+                var item = _trackingContext.Items.Where(i => i.ItemId == id).FirstOrDefault();
+                item.Status = status;
+                item.Price = price;
+                item.PriceCurrency = priceCurrency;
+                _trackingContext.SaveChanges();
+                var changed = _trackingContext.Items.ToList().Find(x => x.ItemId == id);
+                var x = changed;
+            }
         }
 
-        public async Task<bool> IsTracked(string url) => 
-            _trackingContext.Items.Where(i => i.Url.Equals(url)).ToList().Count > 0;
+        public bool IsTracked(string url)
+        {
+            using (var _trackingContext = new TrackingContext())
+            {
+                return _trackingContext.Items.Where(i => i.Url.Equals(url)).ToList().Count > 0;
+            }
+        }
     }
 }

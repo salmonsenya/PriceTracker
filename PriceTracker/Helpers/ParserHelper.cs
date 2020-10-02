@@ -11,7 +11,7 @@ namespace PriceTracker.Helpers
 {
     public class ParserHelper : IParserHelper
     {
-        public async Task<TrackingStatus> GetItemInfoAsync(int itemId, string input)
+        public TrackingStatus GetItemInfo(int itemId, string input)
         {
             var htmlDocument = new HtmlDocument();
             htmlDocument.LoadHtml(input);

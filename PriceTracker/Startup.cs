@@ -26,8 +26,8 @@ namespace PriceTracker
             services.Configure<PullAndBearApiOptions>(Configuration.GetSection("ASOSApiOptions"));
             services.AddHttpClients(Configuration);
             services.AddServices(Configuration);
-            services.AddDbContext<TrackingContext>(options =>
-                options.UseMySql(Configuration.GetConnectionString("TrackingContext")));
+            // services.AddDbContext<TrackingContext>(options =>
+            //    options.UseMySql(Configuration.GetConnectionString("TrackingContext")));
         }
 
         // This method gets called by the runtime. Use this method to configure the HTTP request pipeline.

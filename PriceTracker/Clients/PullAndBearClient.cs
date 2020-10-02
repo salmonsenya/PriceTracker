@@ -17,13 +17,14 @@ namespace PriceTracker.Clients
         public PullAndBearClient(HttpClient httpClient, IOptions<PullAndBearApiOptions> options, IParserHelper parserHelper)
         {
             _httpClient = httpClient ?? throw new ArgumentNullException(nameof(httpClient));
+            _httpClient.DefaultRequestHeaders.Add("Accept", "*/*");
+            _httpClient.DefaultRequestHeaders.Add("Connection", "keep-alive");
+
             _parserHelper = parserHelper ?? throw new ArgumentNullException(nameof(parserHelper));
         }
 
         public async Task<TrackingStatus> GetItemInfoAsync(int itemId, string url)
         {
-            _httpClient.DefaultRequestHeaders.Add("Accept", "*/*");
-            _httpClient.DefaultRequestHeaders.Add("Connection", "keep-alive");
             using (var httpResponseMessage = await _httpClient.GetAsync(new Uri(url)))
             {
                 if (!httpResponseMessage.IsSuccessStatusCode)
@@ -31,7 +32,7 @@ namespace PriceTracker.Clients
                     throw new Exception("The HTTP status code of the response was not expected (" + httpResponseMessage.StatusCode + ").");
                 }
                 var responseString = await httpResponseMessage.Content.ReadAsStringAsync();
-                var itemInfo = await _parserHelper.GetItemInfoAsync(itemId, responseString);
+                var itemInfo = _parserHelper.GetItemInfo(itemId, responseString);
 
                 return itemInfo;
             }
