@@ -10,10 +10,12 @@ namespace PriceTracker.Services
     {
 
         private readonly IPullAndBearService _pullAndBearService;
+        private readonly IBotService _botService;
 
-        public UpdateService(IPullAndBearService asosService)
+        public UpdateService(IPullAndBearService asosService, IBotService botService)
         {
             _pullAndBearService = asosService ?? throw new ArgumentNullException(nameof(asosService));
+            _botService = botService ?? throw new ArgumentNullException(nameof(botService));
         }
 
         public async Task ReplyAsync(Update update)
@@ -30,6 +32,10 @@ namespace PriceTracker.Services
                     var addRegex = new Regex(@"^(/add )");
                     if (addRegex.IsMatch(input))
                     {
+                        await _botService.Client.SendTextMessageAsync(
+                            chatId: message.Chat.Id,
+                            replyToMessageId: message.MessageId,
+                            text: "nice, it's message with /add");
                         await _pullAndBearService.AddNewItemAsync(message);
                     }
                 }

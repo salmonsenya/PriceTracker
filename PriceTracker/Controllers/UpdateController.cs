@@ -3,6 +3,7 @@ using Newtonsoft.Json;
 using PriceTracker.Services;
 using System;
 using System.Threading.Tasks;
+using Telegram.Bot.Types;
 
 namespace PriceTracker.Controllers
 {
@@ -20,8 +21,16 @@ namespace PriceTracker.Controllers
         [Route("update")]
         public async Task<IActionResult> Update([FromBody] object body)
         {
-            var update = JsonConvert.DeserializeObject<Telegram.Bot.Types.Update>(body.ToString());
-            if (update == null) return Ok();
+            Update update = null;
+            try
+            {
+                update = JsonConvert.DeserializeObject<Update>(body.ToString());
+            }
+            catch (Exception ex)
+            {
+                return Ok("update could not be parsed");
+            }
+            if (update == null) return Ok("update is null");
             await _updateService.ReplyAsync(update);
             return Ok();
         }
