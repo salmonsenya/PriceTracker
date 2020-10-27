@@ -9,7 +9,14 @@ namespace PriceTracker.Controllers
         [Route("health")]
         public IActionResult Health()
         {
-            return Ok();
+            return Ok("PriceTracker is active.");
+        }
+
+        [HttpGet]
+        [Route("check")]
+        public IActionResult Check()
+        {
+            return Ok("PriceTracker is active.");
         }
     }
 }

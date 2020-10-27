@@ -9,7 +9,7 @@ using PriceTracker.Models;
 namespace PriceTracker.Migrations
 {
     [DbContext(typeof(TrackingContext))]
-    [Migration("20201002185616_InitialCreate")]
+    [Migration("20201027180231_InitialCreate")]
     partial class InitialCreate
     {
         protected override void BuildTargetModel(ModelBuilder modelBuilder)

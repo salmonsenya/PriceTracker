@@ -32,10 +32,17 @@ namespace PriceTracker.Services
                     var addRegex = new Regex(@"^(/add )");
                     if (addRegex.IsMatch(input))
                     {
-                        await _botService.Client.SendTextMessageAsync(
-                            chatId: message.Chat.Id,
-                            replyToMessageId: message.MessageId,
-                            text: "nice, it's message with /add");
+                        try
+                        {
+                            await _botService.Client.SendTextMessageAsync(
+                                chatId: message.Chat.Id,
+                                replyToMessageId: message.MessageId,
+                                text: "nice, it's message with /add");
+                        }
+                        catch (Exception ex)
+                        {
+
+                        }
                         await _pullAndBearService.AddNewItemAsync(message);
                     }
                 }

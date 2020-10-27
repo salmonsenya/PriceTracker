@@ -1,20 +1,11 @@
-﻿using Microsoft.Extensions.Configuration;
-using PriceTracker.Models;
-using System;
+﻿using PriceTracker.Models;
 using System.Collections.Generic;
 using System.Linq;
-using System.Threading.Tasks;
 
 namespace PriceTracker.Repositories
 {
     public class TrackingRepository : ITrackingRepository
     {
-        private readonly IConfiguration _configuration;
-        public TrackingRepository(IConfiguration configuration)
-        {
-            _configuration = configuration ?? throw new ArgumentNullException();
-        }
-
         public int AddNewItem(Item item)
         {
             using (var _trackingContext = new TrackingContext())

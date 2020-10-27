@@ -21,7 +21,7 @@ namespace PriceTracker.Controllers
         [Route("update")]
         public async Task<IActionResult> Update([FromBody] object body)
         {
-            Update update = null;
+            Update update;
             try
             {
                 update = JsonConvert.DeserializeObject<Update>(body.ToString());
@@ -32,7 +32,14 @@ namespace PriceTracker.Controllers
             }
             if (update == null) return Ok("update is null");
             await _updateService.ReplyAsync(update);
-            return Ok();
+            return Ok("request processed");
+        }
+
+        [HttpGet]
+        [Route("check")]
+        public IActionResult Check()
+        {
+            return Ok("PriceTracker is active.");
         }
     }
 }

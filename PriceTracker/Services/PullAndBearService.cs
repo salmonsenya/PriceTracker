@@ -19,18 +19,23 @@ namespace PriceTracker.Services
         private Queue<Item> itemsQueue;
         private Timer timer;
 
-        public PullAndBearService(IBotService botService, ITrackingRepository trackingRepository, IPullAndBearClient asosClient)
+        public PullAndBearService(IBotService botService, ITrackingRepository trackingRepository, IPullAndBearClient pullAndBearClient)
         {
             _botService = botService ?? throw new ArgumentNullException(nameof(botService));
             _trackingRepository = trackingRepository ?? throw new ArgumentNullException(nameof(trackingRepository));
-            _pullAndBearClient = asosClient ?? throw new ArgumentNullException(nameof(asosClient));
+            _pullAndBearClient = pullAndBearClient ?? throw new ArgumentNullException(nameof(pullAndBearClient));
 
-            var existedItems = _trackingRepository.GetItems();
-            itemsQueue = existedItems.Count > 0 ? new Queue<Item>(existedItems) : new Queue<Item>();
+            List<Item> existedItems = _trackingRepository.GetItems();
+            itemsQueue = existedItems?.Count > 0 ? new Queue<Item>(existedItems) : new Queue<Item>();
             timer = new Timer(2000); // 2 sec
             timer.Elapsed += OnTimedEvent;
             timer.AutoReset = true;
             timer.Enabled = true;
+        }
+
+        public List<Item> GetTrackedItems()
+        {
+            return _trackingRepository.GetItems();
         }
 
         private void OnTimedEvent(Object source, ElapsedEventArgs e)
@@ -42,9 +47,15 @@ namespace PriceTracker.Services
                 _trackingRepository.UpdateInfoOfItem(item.ItemId, newInfo.Status, newInfo.Price, newInfo.PriceCurrency);
                 if (item.Status != newInfo.Status || item.Price != newInfo.Price)
                 {
-                    _botService.Client.SendTextMessageAsync(
-                        chatId: item.ChatId, 
-                        text: "Item has been changed.");
+                    try
+                    {
+                        _botService.Client.SendTextMessageAsync(
+                            chatId: item.ChatId,
+                            text: "Item has been changed.");
+                    } catch (Exception ex)
+                    {
+
+                    }
                 }
                 item.Status = newInfo.Status;
                 item.Price = newInfo.Price;
@@ -60,10 +71,17 @@ namespace PriceTracker.Services
 
             if (_trackingRepository.IsTracked(url))
             {
-                await _botService.Client.SendTextMessageAsync(
-                    chatId: message.Chat.Id,
-                    replyToMessageId: message.MessageId,
-                    text: "Item is already added for tracking.");
+                try
+                {
+                    await _botService.Client.SendTextMessageAsync(
+                        chatId: message.Chat.Id,
+                        replyToMessageId: message.MessageId,
+                        text: "Item is already added for tracking.");
+                }
+                catch (Exception ex)
+                {
+
+                }
             }
             else
             {
@@ -80,12 +98,17 @@ namespace PriceTracker.Services
                 var itemId = _trackingRepository.AddNewItem(newItem);
                 newItem.ItemId = itemId;
                 itemsQueue.Enqueue(newItem);
-                
 
-                await _botService.Client.SendTextMessageAsync(
-                    chatId: message.Chat.Id,
-                    replyToMessageId: message.MessageId,
-                    text: "Item was added for tracking.");
+                try
+                {
+                    await _botService.Client.SendTextMessageAsync(
+                        chatId: message.Chat.Id,
+                        replyToMessageId: message.MessageId,
+                        text: "Item was added for tracking.");
+                } catch (Exception ex)
+                {
+
+                }
             }
         }
     }

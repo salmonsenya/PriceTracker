@@ -1,4 +1,6 @@
-﻿using System.Threading.Tasks;
+﻿using PriceTracker.Models;
+using System.Collections.Generic;
+using System.Threading.Tasks;
 using Telegram.Bot.Types;
 
 namespace PriceTracker.Services
@@ -6,5 +8,7 @@ namespace PriceTracker.Services
     public interface IPullAndBearService
     {
         Task AddNewItemAsync(Message message);
+
+        List<Item> GetTrackedItems();
     }
 }
