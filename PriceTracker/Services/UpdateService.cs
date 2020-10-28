@@ -40,20 +40,20 @@ namespace PriceTracker.Services
                     if (itemsRegex.IsMatch(input))
                     {
                         var items = _pullAndBearService.GetTrackedItems().Select(x => $@"
-*bold \*{x.Name}*
+*{x.Name}*
 [Смотреть на сайте]({x.Url})
 
 "
 ).ToList();
-                        var itemsText = string.Join(", ", items);
+                        var itemsText = string.Join("", items);
                         try
                         {
                             await _botService.Client.SendTextMessageAsync(
                                 chatId: message.Chat.Id,
                                 replyToMessageId: message.MessageId,
                                 parseMode: ParseMode.MarkdownV2,
+                                disableWebPagePreview: true,
                                 text: $@"
-Tracked items:
 {itemsText}"
                             );
                         }
