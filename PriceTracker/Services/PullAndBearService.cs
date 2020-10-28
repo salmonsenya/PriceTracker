@@ -44,7 +44,7 @@ namespace PriceTracker.Services
             {
                 var item = itemsQueue.Dequeue();
                 var newInfo = _pullAndBearClient.GetItemInfoAsync(item.ItemId, item.Url).Result;
-                _trackingRepository.UpdateInfoOfItem(item.ItemId, newInfo.Status, newInfo.Price, newInfo.PriceCurrency);
+                _trackingRepository.UpdateInfoOfItem(item.ItemId, newInfo.Status, newInfo.Price, newInfo.PriceCurrency, newInfo.Name, newInfo.Image);
                 if (item.Status != newInfo.Status || item.Price != newInfo.Price)
                 {
                     try
@@ -52,10 +52,7 @@ namespace PriceTracker.Services
                         _botService.Client.SendTextMessageAsync(
                             chatId: item.ChatId,
                             text: "Item has been changed.");
-                    } catch (Exception ex)
-                    {
-
-                    }
+                    } catch (Exception ex){}
                 }
                 item.Status = newInfo.Status;
                 item.Price = newInfo.Price;
@@ -78,10 +75,7 @@ namespace PriceTracker.Services
                         replyToMessageId: message.MessageId,
                         text: "Item is already added for tracking.");
                 }
-                catch (Exception ex)
-                {
-
-                }
+                catch (Exception ex){}
             }
             else
             {
@@ -105,10 +99,7 @@ namespace PriceTracker.Services
                         chatId: message.Chat.Id,
                         replyToMessageId: message.MessageId,
                         text: "Item was added for tracking.");
-                } catch (Exception ex)
-                {
-
-                }
+                } catch (Exception ex){}
             }
         }
     }

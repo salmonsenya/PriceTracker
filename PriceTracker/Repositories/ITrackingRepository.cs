@@ -10,7 +10,7 @@ namespace PriceTracker.Repositories
 
         List<Item> GetItems();
 
-        void UpdateInfoOfItem(int id, string status, int? price, string priceCurrency);
+        void UpdateInfoOfItem(int id, string status, int? price, string priceCurrency, string name, string image);
 
         bool IsTracked(string url);
     }

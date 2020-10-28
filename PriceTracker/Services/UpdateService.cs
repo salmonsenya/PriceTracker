@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Linq;
 using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 using Telegram.Bot.Types;
@@ -8,7 +9,8 @@ namespace PriceTracker.Services
 {
     public class UpdateService : IUpdateService
     {
-
+        private readonly Regex addRegex = new Regex(@"^(/add )");
+        private readonly Regex itemsRegex = new Regex(@"^(/items)");
         private readonly IPullAndBearService _pullAndBearService;
         private readonly IBotService _botService;
 
@@ -29,21 +31,33 @@ namespace PriceTracker.Services
                 var input = message.Text;
                 if (input != null)
                 {
-                    var addRegex = new Regex(@"^(/add )");
+                    
                     if (addRegex.IsMatch(input))
                     {
+                        await _pullAndBearService.AddNewItemAsync(message);
+                    }
+
+                    if (itemsRegex.IsMatch(input))
+                    {
+                        var items = _pullAndBearService.GetTrackedItems().Select(x => $@"
+*bold \*{x.Name}*
+[Смотреть на сайте]({x.Url})
+
+"
+).ToList();
+                        var itemsText = string.Join(", ", items);
                         try
                         {
                             await _botService.Client.SendTextMessageAsync(
                                 chatId: message.Chat.Id,
                                 replyToMessageId: message.MessageId,
-                                text: "nice, it's message with /add");
+                                parseMode: ParseMode.MarkdownV2,
+                                text: $@"
+Tracked items:
+{itemsText}"
+                            );
                         }
-                        catch (Exception ex)
-                        {
-
-                        }
-                        await _pullAndBearService.AddNewItemAsync(message);
+                        catch (Exception ex) { }
                     }
                 }
             }

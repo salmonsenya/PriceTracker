@@ -25,7 +25,7 @@ namespace PriceTracker.Repositories
             }
         }
           
-        public void UpdateInfoOfItem(int id, string status, int? price, string priceCurrency)
+        public void UpdateInfoOfItem(int id, string status, int? price, string priceCurrency, string name, string image)
         {
             using (var _trackingContext = new TrackingContext())
             {
@@ -33,6 +33,8 @@ namespace PriceTracker.Repositories
                 item.Status = status;
                 item.Price = price;
                 item.PriceCurrency = priceCurrency;
+                item.Name = name;
+                item.Image = image;
                 _trackingContext.SaveChanges();
                 var changed = _trackingContext.Items.ToList().Find(x => x.ItemId == id);
                 var x = changed;
