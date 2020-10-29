@@ -39,7 +39,7 @@ namespace PriceTracker.Services
 
                     if (itemsRegex.IsMatch(input))
                     {
-                        var items = _pullAndBearService.GetTrackedItems().Select(x => $@"
+                        var items = _pullAndBearService.GetTrackedItems().Where(x => x.UserId == message.From.Id).Select(x => $@"
 *{x.Name}*
 [Смотреть на сайте]({x.Url})
 

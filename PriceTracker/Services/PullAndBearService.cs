@@ -7,6 +7,7 @@ using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 using System.Timers;
 using Telegram.Bot.Types;
+using Telegram.Bot.Types.Enums;
 
 namespace PriceTracker.Services
 {
@@ -50,8 +51,15 @@ namespace PriceTracker.Services
                     try
                     {
                         _botService.Client.SendTextMessageAsync(
-                            chatId: item.ChatId,
-                            text: "Item has been changed.");
+                            chatId: item.ChatId,                         
+                            parseMode: ParseMode.MarkdownV2,
+                            disableWebPagePreview: true,
+                            text: $@"
+Item price has been changed.
+*{item.Name}*
+Previous: {item.Price} {item.PriceCurrency}
+Current: {newInfo.Price} {newInfo.PriceCurrency}
+[Смотреть на сайте]({item.Url})") ;
                     } catch (Exception ex){}
                 }
                 item.Status = newInfo.Status;
@@ -87,6 +95,7 @@ namespace PriceTracker.Services
                     StartTrackingDate = DateTime.Now,
                     Source = "Pull&Bear",
                     ChatId = message.Chat.Id,
+                    UserId = message.From.Id
                 };
 
                 var itemId = _trackingRepository.AddNewItem(newItem);

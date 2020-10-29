@@ -28,11 +28,11 @@ namespace PriceTracker.Controllers
             }
             catch (Exception ex)
             {
-                return Ok("update could not be parsed");
+                return Ok($"Update could not be parsed. Smth went wrong: {ex.Message}");
             }
-            if (update == null) return Ok("update is null");
+            if (update == null) return Ok("Update is null.");
             await _updateService.ReplyAsync(update);
-            return Ok("request processed");
+            return Ok("Request processed.");
         }
 
         [HttpGet]

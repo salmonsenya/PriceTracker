@@ -23,5 +23,7 @@ namespace PriceTracker.Models
         public string Source { get; set; }
 
         public long ChatId { get; set; }
+
+        public int UserId { get; set; }
     }
 }
