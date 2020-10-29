@@ -26,40 +26,40 @@ namespace PriceTracker.Services
             _trackingRepository = trackingRepository ?? throw new ArgumentNullException(nameof(trackingRepository));
             _pullAndBearClient = pullAndBearClient ?? throw new ArgumentNullException(nameof(pullAndBearClient));
 
-            List<Item> existedItems = _trackingRepository.GetItems();
+            List<Item> existedItems = _trackingRepository.GetItemsAsync().Result;
             itemsQueue = existedItems?.Count > 0 ? new Queue<Item>(existedItems) : new Queue<Item>();
-            timer = new Timer(2000); // 2 sec
+
+            timer = new Timer(5000); // 5 sec
             timer.Elapsed += OnTimedEvent;
             timer.AutoReset = true;
             timer.Enabled = true;
         }
 
-        public List<Item> GetTrackedItems()
-        {
-            return _trackingRepository.GetItems();
-        }
+        public async Task<List<Item>> GetTrackedItemsAsync() =>
+            await _trackingRepository.GetItemsAsync();
 
-        private void OnTimedEvent(Object source, ElapsedEventArgs e)
+        private async void OnTimedEvent(Object source, ElapsedEventArgs e)
         {
             if (itemsQueue.Count > 0)
             {
                 var item = itemsQueue.Dequeue();
-                var newInfo = _pullAndBearClient.GetItemInfoAsync(item.ItemId, item.Url).Result;
-                _trackingRepository.UpdateInfoOfItem(item.ItemId, newInfo.Status, newInfo.Price, newInfo.PriceCurrency, newInfo.Name, newInfo.Image);
+                var newInfo = await _pullAndBearClient.GetItemInfoAsync(item.ItemId, item.Url);
+                await _trackingRepository.UpdateInfoOfItemAsync(item.ItemId, newInfo.Status, newInfo.Price, newInfo.PriceCurrency, newInfo.Name, newInfo.Image);
                 if (item.Status != newInfo.Status || item.Price != newInfo.Price)
                 {
                     try
                     {
-                        _botService.Client.SendTextMessageAsync(
+                        await _botService.Client.SendTextMessageAsync(
                             chatId: item.ChatId,                         
                             parseMode: ParseMode.MarkdownV2,
-                            disableWebPagePreview: true,
+                            disableWebPagePreview: false,
                             text: $@"
 Item price has been changed.
 *{item.Name}*
 Previous: {item.Price} {item.PriceCurrency}
 Current: {newInfo.Price} {newInfo.PriceCurrency}
-[Смотреть на сайте]({item.Url})") ;
+[View on site]({item.Url})
+");
                     } catch (Exception ex){}
                 }
                 item.Status = newInfo.Status;
@@ -74,7 +74,7 @@ Current: {newInfo.Price} {newInfo.PriceCurrency}
             var input = message.Text;
             var url = Regex.Match(input, @"(http|ftp|https):\/\/([\w\-_]+(?:(?:\.[\w\-_]+)+))([\w\-\.,@?^=%&amp;:/~\+#]*[\w\-\@?^=%&amp;/~\+#])?").Value;
 
-            if (_trackingRepository.IsTracked(url))
+            if (await _trackingRepository.IsTracked(url, message.From.Id))
             {
                 try
                 {
@@ -98,7 +98,7 @@ Current: {newInfo.Price} {newInfo.PriceCurrency}
                     UserId = message.From.Id
                 };
 
-                var itemId = _trackingRepository.AddNewItem(newItem);
+                var itemId = await _trackingRepository.AddNewItemAsync(newItem);
                 newItem.ItemId = itemId;
                 itemsQueue.Enqueue(newItem);
 

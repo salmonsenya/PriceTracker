@@ -10,7 +10,7 @@ namespace PriceTracker.Services
     public class UpdateService : IUpdateService
     {
         private readonly Regex addRegex = new Regex(@"^(/add )");
-        private readonly Regex itemsRegex = new Regex(@"^(/items)");
+        private readonly Regex cartRegex = new Regex(@"^(/cart)");
         private readonly IPullAndBearService _pullAndBearService;
         private readonly IBotService _botService;
 
@@ -37,27 +37,28 @@ namespace PriceTracker.Services
                         await _pullAndBearService.AddNewItemAsync(message);
                     }
 
-                    if (itemsRegex.IsMatch(input))
+                    if (cartRegex.IsMatch(input))
                     {
-                        var items = _pullAndBearService.GetTrackedItems().Where(x => x.UserId == message.From.Id).Select(x => $@"
+                        var items = await _pullAndBearService.GetTrackedItemsAsync();
+                        var userItems = items.Where(x => x.UserId == message.From.Id).Select(x => $@"
 *{x.Name}*
-[Смотреть на сайте]({x.Url})
-
-"
-).ToList();
-                        var itemsText = string.Join("", items);
-                        try
+Current: {x.Price} {x.PriceCurrency}
+[View on site]({x.Url})
+");
+                        foreach (var item in userItems)
                         {
-                            await _botService.Client.SendTextMessageAsync(
-                                chatId: message.Chat.Id,
-                                replyToMessageId: message.MessageId,
-                                parseMode: ParseMode.MarkdownV2,
-                                disableWebPagePreview: true,
-                                text: $@"
-{itemsText}"
-                            );
+                            try
+                            {
+                                await _botService.Client.SendTextMessageAsync(
+                                    chatId: message.Chat.Id,
+                                    replyToMessageId: message.MessageId,
+                                    parseMode: ParseMode.MarkdownV2,
+                                    disableWebPagePreview: false,
+                                    text: $@"{item}"
+                                );
+                            }
+                            catch (Exception ex) { }
                         }
-                        catch (Exception ex) { }
                     }
                 }
             }

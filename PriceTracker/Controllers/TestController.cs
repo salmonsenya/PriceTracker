@@ -2,6 +2,7 @@
 using Newtonsoft.Json;
 using PriceTracker.Services;
 using System;
+using System.Threading.Tasks;
 
 namespace PriceTracker.Controllers
 {
@@ -24,9 +25,9 @@ namespace PriceTracker.Controllers
 
         [HttpGet]
         [Route("items")]
-        public IActionResult Items()
+        public async Task<IActionResult> Items()
         {
-            var items = _pullAndBearService.GetTrackedItems();
+            var items = await _pullAndBearService.GetTrackedItemsAsync();
             return Ok(JsonConvert.SerializeObject(items, Formatting.Indented));
         }
     }
