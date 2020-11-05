@@ -49,13 +49,10 @@ Current: {x.Price} {x.PriceCurrency}
                         {
                             try
                             {
-                                await _botService.Client.SendTextMessageAsync(
-                                    chatId: message.Chat.Id,
-                                    replyToMessageId: message.MessageId,
-                                    parseMode: ParseMode.MarkdownV2,
-                                    disableWebPagePreview: false,
-                                    text: $@"{item}"
-                                );
+                                await _botService.SendReplyMessageMarkdownV2(
+                                    message.Chat.Id,
+                                    message.MessageId,
+                                    $@"{item}");
                             }
                             catch (Exception ex) { }
                         }
@@ -68,11 +65,10 @@ Current: {x.Price} {x.PriceCurrency}
                         {
                             try
                             {
-                                await _botService.Client.SendTextMessageAsync(
-                                    chatId: message.Chat.Id,
-                                    replyToMessageId: message.MessageId,
-                                    text: $@"Reply to message with item you want to remove from cart."
-                                );
+                                await _botService.SendReplyMessage(
+                                    message.Chat.Id,
+                                    message.MessageId,
+                                    "Reply to message with item you want to remove from cart.");
                             }
                             catch (Exception ex) { }
                             return;
@@ -84,22 +80,19 @@ Current: {x.Price} {x.PriceCurrency}
                         {
                             try
                             {
-                                await _botService.Client.SendTextMessageAsync(
-                                    chatId: message.Chat.Id,
-                                    replyToMessageId: message.MessageId,
-                                    parseMode: ParseMode.MarkdownV2,
-                                    disableWebPagePreview: false,
-                                    text: $@"{e.Message}"
-                                );
+                                await _botService.SendReplyMessageMarkdownV2(
+                                    message.Chat.Id,
+                                    message.MessageId,
+                                    $@"{e.Message}");
                             }
                             catch (Exception ex) { }
                         }
                         try
                         {
-                            await _botService.Client.SendTextMessageAsync(
-                                chatId: message.Chat.Id,
-                                replyToMessageId: message.MessageId,
-                                text: "Item was removed from cart."
+                            await _botService.SendReplyMessage(
+                                message.Chat.Id,
+                                message.MessageId,
+                                "Item was removed from cart."
                             );
                         }
                         catch (Exception ex) { }

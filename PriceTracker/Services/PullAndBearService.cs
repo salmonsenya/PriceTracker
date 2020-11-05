@@ -9,7 +9,6 @@ using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 using System.Timers;
 using Telegram.Bot.Types;
-using Telegram.Bot.Types.Enums;
 
 namespace PriceTracker.Services
 {
@@ -57,21 +56,15 @@ namespace PriceTracker.Services
                         await _trackingRepository.UpdateInfoOfItemAsync(item.ItemId, newInfo);
                         if (item.Status != newInfo.Status || item.Price != newInfo.Price)
                         {
-                            try
-                            {
-                                await _botService.Client.SendTextMessageAsync(
-                                    chatId: item.ChatId,
-                                    parseMode: ParseMode.MarkdownV2,
-                                    disableWebPagePreview: false,
-                                    text: $@"
+                            await _botService.SendMessageMarkdownV2(
+                                item.ChatId,
+                                $@"
 Item price has been changed.
 *{item.Name}*
 Previous: {item.Price} {item.PriceCurrency}
 Current: {newInfo.Price} {newInfo.PriceCurrency}
 [View on site]({item.Url})
 ");
-                            }
-                            catch (Exception ex) { }
                         }
                         item = _updateInfoHelper.GetUpdatedItem(item, newInfo);
                     }
@@ -87,27 +80,19 @@ Current: {newInfo.Price} {newInfo.PriceCurrency}
             var url = Regex.Match(input, @"(http|ftp|https):\/\/([\w\-_]+(?:(?:\.[\w\-_]+)+))([\w\-\.,@?^=%&amp;:/~\+#]*[\w\-\@?^=%&amp;/~\+#])?").Value;
             if (string.IsNullOrEmpty(url))
             {
-                try
-                {
-                    await _botService.Client.SendTextMessageAsync(
-                        chatId: message.Chat.Id,
-                        replyToMessageId: message.MessageId,
-                        text: "Insert a link of item you whant to add for tracking after command /add + space.");
-                }
-                catch (Exception ex) { }
+                await _botService.SendReplyMessage(
+                    message.Chat.Id,
+                    message.MessageId,
+                    "Insert a link of item you want to add for tracking after command /add + space.");
                 return;
             }
 
             if (await _trackingRepository.IsTracked(url, message.From.Id))
             {
-                try
-                {
-                    await _botService.Client.SendTextMessageAsync(
-                        chatId: message.Chat.Id,
-                        replyToMessageId: message.MessageId,
-                        text: "Item is already added for tracking.");
-                }
-                catch (Exception ex){}
+                await _botService.SendReplyMessage(
+                    message.Chat.Id,
+                    message.MessageId,
+                    "Item is already added for tracking.");
             }
             else
             {
@@ -124,20 +109,14 @@ Current: {newInfo.Price} {newInfo.PriceCurrency}
                 var itemId = await _trackingRepository.AddNewItemAsync(newItem);
                 newItem.ItemId = itemId;
                 itemsQueue.Enqueue(newItem);
-
-                try
-                {
-                    await _botService.Client.SendTextMessageAsync(
-                        chatId: message.Chat.Id,
-                        replyToMessageId: message.MessageId,
-                        parseMode: ParseMode.MarkdownV2,
-                        disableWebPagePreview: false,
-                        text: $@"
+                await _botService.SendReplyMessage(
+                    message.Chat.Id,
+                    message.MessageId,
+                    $@"
 *{newItem.Name}*
 Current: {newItem.Price} {newItem.PriceCurrency}
 [View on site]({newItem.Url})
 ");
-                } catch (Exception ex){}
             }
         }
 
@@ -148,14 +127,10 @@ Current: {newItem.Price} {newItem.PriceCurrency}
 
             if (string.IsNullOrEmpty(firstLine))
             {
-                try
-                {
-                    await _botService.Client.SendTextMessageAsync(
-                        chatId: itemMessage.Chat.Id,
-                        replyToMessageId: itemMessage.MessageId,
-                        text: "Name of item u want to delete wasn't found.");
-                }
-                catch (Exception ex) { }
+                await _botService.SendReplyMessage(
+                    itemMessage.Chat.Id,
+                    itemMessage.MessageId,
+                    "Name of item u want to delete wasn't found.");
                 return;
             }
             // remove from queue
@@ -172,24 +147,16 @@ Current: {newItem.Price} {newItem.PriceCurrency}
             }
             if (!removedFromQueue)
             {
-                try
-                {
-                    await _botService.Client.SendTextMessageAsync(
-                        chatId: itemMessage.Chat.Id,
-                        replyToMessageId: itemMessage.MessageId,
-                        text: "Item could not be removed from queue.");
-                }
-                catch (Exception ex) { }
+                await _botService.SendReplyMessage(
+                    itemMessage.Chat.Id,
+                    itemMessage.MessageId,
+                    "Item could not be removed from queue.");
                 return;
             }
-            try
-            {
-                await _botService.Client.SendTextMessageAsync(
-                    chatId: itemMessage.Chat.Id,
-                    replyToMessageId: itemMessage.MessageId,
-                    text: $@"Item was removed from queue.");
-            }
-            catch (Exception e) { }
+            await _botService.SendReplyMessage(
+                itemMessage.Chat.Id,
+                itemMessage.MessageId,
+                "Item was removed from queue.");
 
             // remove from db
             try
@@ -197,23 +164,15 @@ Current: {newItem.Price} {newItem.PriceCurrency}
                 await _trackingRepository.RemoveItem(firstLine);
             } catch (Exception ex)
             {
-                try
-                {
-                    await _botService.Client.SendTextMessageAsync(
-                        chatId: itemMessage.Chat.Id,
-                        replyToMessageId: itemMessage.MessageId,
-                        text: $@"{ex.Message}");
-                }
-                catch (Exception e) { }
+                await _botService.SendReplyMessage(
+                    itemMessage.Chat.Id,
+                    itemMessage.MessageId,
+                    $@"{ex.Message}");
             }
-            try
-            {
-                await _botService.Client.SendTextMessageAsync(
-                    chatId: itemMessage.Chat.Id,
-                    replyToMessageId: itemMessage.MessageId,
-                    text: $@"Item was removed from DB.");
-            }
-            catch (Exception e) { }
+            await _botService.SendReplyMessage(
+                itemMessage.Chat.Id,
+                itemMessage.MessageId,
+                "Item was removed from DB.");
         }
     }
 }
