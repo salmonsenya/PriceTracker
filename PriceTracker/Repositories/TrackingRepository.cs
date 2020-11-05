@@ -13,7 +13,7 @@ namespace PriceTracker.Repositories
             using var _trackingContext = new TrackingContext();
             _trackingContext.Items.Add(item);
             await _trackingContext.SaveChangesAsync();
-            var result = await _trackingContext.Items.Where(i => i.Url == item.Url).FirstOrDefaultAsync();
+            var result = await _trackingContext.Items.Where(x => x.Url.Equals(item.Url)).FirstOrDefaultAsync();
             return result.ItemId;
         }
 
@@ -39,6 +39,17 @@ namespace PriceTracker.Repositories
             using var _trackingContext = new TrackingContext();
             var items = await _trackingContext.Items.Where(i => i.Url.Equals(url) && i.UserId == userId).ToListAsync();
             return items.Count > 0;
+        }
+
+        public async Task RemoveItem(string url)
+        {
+            using var _trackingContext = new TrackingContext();
+            var itemToRemove = await _trackingContext.Items.SingleOrDefaultAsync(x => x.Url.Equals(url));
+            if (itemToRemove != null)
+            {
+                _trackingContext.Items.Remove(itemToRemove);
+                await _trackingContext.SaveChangesAsync();
+            }
         }
     }
 }

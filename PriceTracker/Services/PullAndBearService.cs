@@ -43,7 +43,7 @@ namespace PriceTracker.Services
             if (itemsQueue.Count > 0)
             {
                 var item = itemsQueue.Dequeue();
-                var newInfo = await _pullAndBearClient.GetItemInfoAsync(item.ItemId, item.Url);
+                var newInfo = await _pullAndBearClient.GetItemInfoAsync(item.Url);
                 await _trackingRepository.UpdateInfoOfItemAsync(item.ItemId, newInfo.Status, newInfo.Price, newInfo.PriceCurrency, newInfo.Name, newInfo.Image);
                 if (item.Status != newInfo.Status || item.Price != newInfo.Price)
                 {
@@ -65,6 +65,8 @@ Current: {newInfo.Price} {newInfo.PriceCurrency}
                 item.Status = newInfo.Status;
                 item.Price = newInfo.Price;
                 item.PriceCurrency = newInfo.PriceCurrency;
+                item.Name = newInfo.Name;
+                item.Image = newInfo.Image;
                 itemsQueue.Enqueue(item);
             }
         }
@@ -73,6 +75,18 @@ Current: {newInfo.Price} {newInfo.PriceCurrency}
         {
             var input = message.Text;
             var url = Regex.Match(input, @"(http|ftp|https):\/\/([\w\-_]+(?:(?:\.[\w\-_]+)+))([\w\-\.,@?^=%&amp;:/~\+#]*[\w\-\@?^=%&amp;/~\+#])?").Value;
+            if (string.IsNullOrEmpty(url))
+            {
+                try
+                {
+                    await _botService.Client.SendTextMessageAsync(
+                        chatId: message.Chat.Id,
+                        replyToMessageId: message.MessageId,
+                        text: "Insert a link of item you whant to add for tracking after command /add + space.");
+                }
+                catch (Exception ex) { }
+                return;
+            }
 
             if (await _trackingRepository.IsTracked(url, message.From.Id))
             {
@@ -87,11 +101,15 @@ Current: {newInfo.Price} {newInfo.PriceCurrency}
             }
             else
             {
+                var newInfo = await _pullAndBearClient.GetItemInfoAsync(url);
                 var newItem = new Item()
                 {
                     Url = url,
                     Status = null,
-                    Price = null,
+                    Price = newInfo.Price,
+                    PriceCurrency = newInfo.PriceCurrency,
+                    Name = newInfo.Name,
+                    Image = newInfo.Image,
                     StartTrackingDate = DateTime.Now,
                     Source = "Pull&Bear",
                     ChatId = message.Chat.Id,
@@ -107,9 +125,43 @@ Current: {newInfo.Price} {newInfo.PriceCurrency}
                     await _botService.Client.SendTextMessageAsync(
                         chatId: message.Chat.Id,
                         replyToMessageId: message.MessageId,
-                        text: "Item was added for tracking.");
+                        parseMode: ParseMode.MarkdownV2,
+                        disableWebPagePreview: false,
+                        text: $@"
+*{newItem.Name}*
+Current: {newItem.Price} {newItem.PriceCurrency}
+[View on site]({newItem.Url})
+");
                 } catch (Exception ex){}
             }
+        }
+
+        public async Task RemoveItemAsync(Message itemMessage)
+        {
+            var itemText = itemMessage.Text;
+            var url = Regex.Match(itemText, @"(http|ftp|https):\/\/([\w\-_]+(?:(?:\.[\w\-_]+)+))([\w\-\.,@?^=%&amp;:/~\+#]*[\w\-\@?^=%&amp;/~\+#])?").Value;
+            if (string.IsNullOrEmpty(url))
+            {
+                try
+                {
+                    await _botService.Client.SendTextMessageAsync(
+                        chatId: itemMessage.Chat.Id,
+                        replyToMessageId: itemMessage.MessageId,
+                        text: "Link to item u want to delete wasn't found.");
+                }
+                catch (Exception ex) { }
+                return;
+            }
+            // remove from queue
+            for (int i = 0; i < itemsQueue.Count; i++)
+            {
+                var item = itemsQueue.Dequeue();
+                if (item.Url.Equals(url)) break;
+                itemsQueue.Enqueue(item);
+            }
+
+            // remove from db
+            await _trackingRepository.RemoveItem(url);
         }
     }
 }

@@ -6,7 +6,7 @@ namespace PriceTracker.Helpers
 {
     public class ParserHelper : IParserHelper
     {
-        public TrackingStatus GetItemInfo(int itemId, string input)
+        public TrackingStatus GetItemInfo(string input)
         {
             var htmlDocument = new HtmlDocument();
             htmlDocument.LoadHtml(input);
@@ -17,7 +17,6 @@ namespace PriceTracker.Helpers
             var product = JsonConvert.DeserializeObject<PullAndBearProduct>(text);
             var newInfo = new TrackingStatus()
             {
-                ItemId = itemId,
                 Name = product.name,
                 Image = !string.IsNullOrEmpty(product.image) ? product.image : image,
                 Status = null,

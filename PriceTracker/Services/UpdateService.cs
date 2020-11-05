@@ -9,8 +9,9 @@ namespace PriceTracker.Services
 {
     public class UpdateService : IUpdateService
     {
-        private readonly Regex addRegex = new Regex(@"^(/add )");
+        private readonly Regex addRegex = new Regex(@"^(/add)");
         private readonly Regex cartRegex = new Regex(@"^(/cart)");
+        private readonly Regex removeRegex = new Regex(@"^(/remove)");
         private readonly IPullAndBearService _pullAndBearService;
         private readonly IBotService _botService;
 
@@ -31,7 +32,6 @@ namespace PriceTracker.Services
                 var input = message.Text;
                 if (input != null)
                 {
-                    
                     if (addRegex.IsMatch(input))
                     {
                         await _pullAndBearService.AddNewItemAsync(message);
@@ -59,6 +59,34 @@ Current: {x.Price} {x.PriceCurrency}
                             }
                             catch (Exception ex) { }
                         }
+                    }
+
+                    if (removeRegex.IsMatch(input))
+                    {
+                        var itemMessage = message.ReplyToMessage;
+                        if (itemMessage == null)
+                        {
+                            try
+                            {
+                                await _botService.Client.SendTextMessageAsync(
+                                    chatId: message.Chat.Id,
+                                    replyToMessageId: message.MessageId,
+                                    text: $@"Reply to message with item you want to remove from cart."
+                                );
+                            }
+                            catch (Exception ex) { }
+                            return;
+                        }
+                        await _pullAndBearService.RemoveItemAsync(itemMessage);
+                        try
+                        {
+                            await _botService.Client.SendTextMessageAsync(
+                                chatId: message.Chat.Id,
+                                replyToMessageId: message.MessageId,
+                                text: $@"Item was removed from cart."
+                            );
+                        }
+                        catch (Exception ex) { }
                     }
                 }
             }

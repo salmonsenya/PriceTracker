@@ -10,5 +10,7 @@ namespace PriceTracker.Services
         Task AddNewItemAsync(Message message);
 
         Task<List<Item>> GetTrackedItemsAsync();
+
+        Task RemoveItemAsync(Message itemMessage);
     }
 }

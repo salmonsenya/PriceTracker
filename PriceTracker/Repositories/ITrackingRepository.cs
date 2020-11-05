@@ -13,5 +13,7 @@ namespace PriceTracker.Repositories
         Task UpdateInfoOfItemAsync(int id, string status, int? price, string priceCurrency, string name, string image);
 
         Task<bool> IsTracked(string url, int userId);
+
+        Task RemoveItem(string url);
     }
 }
