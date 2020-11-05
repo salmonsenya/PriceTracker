@@ -19,7 +19,7 @@ namespace PriceTracker.Services
             Client = new TelegramBotClient(botToken);
         }
 
-        public async Task SendReplyMessage(long chatId, int replyToMessageId, string text)
+        public async Task SendMessage(long chatId, int replyToMessageId, string text)
         {
             try
             {
@@ -31,7 +31,7 @@ namespace PriceTracker.Services
             catch (Exception ex) { }
         }
 
-        public async Task SendReplyMessageMarkdownV2(long chatId, int replyToMessageId, string text)
+        public async Task SendMessageMarkdownV2(long chatId, int replyToMessageId, string text)
         {
             try
             {
@@ -51,6 +51,20 @@ namespace PriceTracker.Services
             {
                 await Client.SendTextMessageAsync(
                     chatId: chatId,
+                    parseMode: ParseMode.MarkdownV2,
+                    disableWebPagePreview: false,
+                    text: text);
+            }
+            catch (Exception ex) { }
+        }
+
+        public async Task SendMessageMarkdownV2(long chatId, int replyToMessageId, string text, bool buttons)
+        {
+            try
+            {
+                await Client.SendTextMessageAsync(
+                    chatId: chatId,
+                    replyToMessageId: replyToMessageId,
                     parseMode: ParseMode.MarkdownV2,
                     disableWebPagePreview: false,
                     text: text);

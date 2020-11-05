@@ -80,7 +80,7 @@ Current: {newInfo.Price} {newInfo.PriceCurrency}
             var url = Regex.Match(input, @"(http|ftp|https):\/\/([\w\-_]+(?:(?:\.[\w\-_]+)+))([\w\-\.,@?^=%&amp;:/~\+#]*[\w\-\@?^=%&amp;/~\+#])?").Value;
             if (string.IsNullOrEmpty(url))
             {
-                await _botService.SendReplyMessage(
+                await _botService.SendMessage(
                     message.Chat.Id,
                     message.MessageId,
                     "Insert a link of item you want to add for tracking after command /add + space.");
@@ -89,7 +89,7 @@ Current: {newInfo.Price} {newInfo.PriceCurrency}
 
             if (await _trackingRepository.IsTracked(url, message.From.Id))
             {
-                await _botService.SendReplyMessage(
+                await _botService.SendMessage(
                     message.Chat.Id,
                     message.MessageId,
                     "Item is already added for tracking.");
@@ -109,7 +109,7 @@ Current: {newInfo.Price} {newInfo.PriceCurrency}
                 var itemId = await _trackingRepository.AddNewItemAsync(newItem);
                 newItem.ItemId = itemId;
                 itemsQueue.Enqueue(newItem);
-                await _botService.SendReplyMessageMarkdownV2(
+                await _botService.SendMessageMarkdownV2(
                     message.Chat.Id,
                     message.MessageId,
                     $@"
@@ -127,7 +127,7 @@ Current: {newItem.Price} {newItem.PriceCurrency}
 
             if (string.IsNullOrEmpty(firstLine))
             {
-                await _botService.SendReplyMessage(
+                await _botService.SendMessage(
                     itemMessage.Chat.Id,
                     itemMessage.MessageId,
                     "Name of item u want to delete wasn't found.");
@@ -147,13 +147,13 @@ Current: {newItem.Price} {newItem.PriceCurrency}
             }
             if (!removedFromQueue)
             {
-                await _botService.SendReplyMessage(
+                await _botService.SendMessage(
                     itemMessage.Chat.Id,
                     itemMessage.MessageId,
                     "Item could not be removed from queue.");
                 return;
             }
-            await _botService.SendReplyMessage(
+            await _botService.SendMessage(
                 itemMessage.Chat.Id,
                 itemMessage.MessageId,
                 "Item was removed from queue.");
@@ -164,12 +164,12 @@ Current: {newItem.Price} {newItem.PriceCurrency}
                 await _trackingRepository.RemoveItem(firstLine);
             } catch (Exception ex)
             {
-                await _botService.SendReplyMessage(
+                await _botService.SendMessage(
                     itemMessage.Chat.Id,
                     itemMessage.MessageId,
                     $@"{ex.Message}");
             }
-            await _botService.SendReplyMessage(
+            await _botService.SendMessage(
                 itemMessage.Chat.Id,
                 itemMessage.MessageId,
                 "Item was removed from DB.");

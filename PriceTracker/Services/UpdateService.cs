@@ -49,7 +49,7 @@ Current: {x.Price} {x.PriceCurrency}
                         {
                             try
                             {
-                                await _botService.SendReplyMessageMarkdownV2(
+                                await _botService.SendMessageMarkdownV2(
                                     message.Chat.Id,
                                     message.MessageId,
                                     $@"{item}");
@@ -65,7 +65,7 @@ Current: {x.Price} {x.PriceCurrency}
                         {
                             try
                             {
-                                await _botService.SendReplyMessage(
+                                await _botService.SendMessage(
                                     message.Chat.Id,
                                     message.MessageId,
                                     "Reply to message with item you want to remove from cart.");
@@ -80,7 +80,7 @@ Current: {x.Price} {x.PriceCurrency}
                         {
                             try
                             {
-                                await _botService.SendReplyMessageMarkdownV2(
+                                await _botService.SendMessageMarkdownV2(
                                     message.Chat.Id,
                                     message.MessageId,
                                     $@"{e.Message}");
@@ -89,7 +89,7 @@ Current: {x.Price} {x.PriceCurrency}
                         }
                         try
                         {
-                            await _botService.SendReplyMessage(
+                            await _botService.SendMessage(
                                 message.Chat.Id,
                                 message.MessageId,
                                 "Item was removed from cart."
