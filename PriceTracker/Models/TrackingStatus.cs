@@ -1,6 +1,6 @@
 ﻿namespace PriceTracker.Models
 {
-    public class TrackingStatus
+    public class ItemOnline
     {
         public int ItemId { get; set; }
 

@@ -17,6 +17,7 @@ namespace PriceTracker
         public static void AddServices(this IServiceCollection services, IConfiguration configuration)
         {
             services.AddSingleton<IParserHelper, ParserHelper>();
+            services.AddSingleton<IUpdateInfoHelper, UpdateInfoHelper>();
             services.AddSingleton<IBotService, BotService>();
             services.AddScoped<ITrackingRepository, TrackingRepository>();
             services.AddScoped<IPullAndBearService, PullAndBearService>();

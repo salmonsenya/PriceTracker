@@ -5,6 +5,6 @@ namespace PriceTracker.Clients
 {
     public interface IPullAndBearClient
     {
-        Task<TrackingStatus> GetItemInfoAsync(string paramUrl);
+        Task<ItemOnline> GetItemInfoAsync(string paramUrl);
     }
 }

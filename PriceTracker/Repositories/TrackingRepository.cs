@@ -1,4 +1,5 @@
 ﻿using Microsoft.EntityFrameworkCore;
+using PriceTracker.Helpers;
 using PriceTracker.Models;
 using System;
 using System.Collections.Generic;
@@ -9,6 +10,12 @@ namespace PriceTracker.Repositories
 {
     public class TrackingRepository : ITrackingRepository
     {
+        private readonly IUpdateInfoHelper _updateInfoHelper;
+        public TrackingRepository(IUpdateInfoHelper updateInfoHelper)
+        {
+            _updateInfoHelper = updateInfoHelper ?? throw new ArgumentNullException(nameof(updateInfoHelper));
+        }
+
         public async Task<int> AddNewItemAsync(Item item)
         {
             using var _trackingContext = new TrackingContext();
@@ -23,15 +30,11 @@ namespace PriceTracker.Repositories
             return await _trackingContext.Items.ToListAsync();
         }
           
-        public async Task UpdateInfoOfItemAsync(int id, string status, int? price, string priceCurrency, string name, string image)
+        public async Task UpdateInfoOfItemAsync(int id, ItemOnline itemOnline)
         {
             using var _trackingContext = new TrackingContext();
             var item = await _trackingContext.Items.Where(i => i.ItemId == id).FirstOrDefaultAsync();
-            item.Status = status;
-            item.Price = price;
-            item.PriceCurrency = priceCurrency;
-            item.Name = name;
-            item.Image = image;
+            item = _updateInfoHelper.GetUpdatedItem(item, itemOnline);
             await _trackingContext.SaveChangesAsync();
         }
 

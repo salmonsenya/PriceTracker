@@ -1,4 +1,6 @@
-﻿using PriceTracker.Clients;
+﻿using AutoMapper;
+using PriceTracker.Clients;
+using PriceTracker.Helpers;
 using PriceTracker.Models;
 using PriceTracker.Repositories;
 using System;
@@ -16,15 +18,19 @@ namespace PriceTracker.Services
         private readonly IBotService _botService;
         private readonly ITrackingRepository _trackingRepository;
         private readonly IPullAndBearClient _pullAndBearClient;
+        private readonly IMapper _mapper;
+        private readonly IUpdateInfoHelper _updateInfoHelper;
 
         private Queue<Item> itemsQueue;
         private Timer timer;
 
-        public PullAndBearService(IBotService botService, ITrackingRepository trackingRepository, IPullAndBearClient pullAndBearClient)
+        public PullAndBearService(IBotService botService, ITrackingRepository trackingRepository, IPullAndBearClient pullAndBearClient, IMapper mapper, IUpdateInfoHelper updateInfoHelper)
         {
             _botService = botService ?? throw new ArgumentNullException(nameof(botService));
             _trackingRepository = trackingRepository ?? throw new ArgumentNullException(nameof(trackingRepository));
             _pullAndBearClient = pullAndBearClient ?? throw new ArgumentNullException(nameof(pullAndBearClient));
+            _mapper = mapper ?? throw new ArgumentNullException(nameof(mapper));
+            _updateInfoHelper = updateInfoHelper ?? throw new ArgumentNullException(nameof(updateInfoHelper));
 
             List<Item> existedItems = _trackingRepository.GetItemsAsync().Result;
             itemsQueue = existedItems?.Count > 0 ? new Queue<Item>(existedItems) : new Queue<Item>();
@@ -48,7 +54,7 @@ namespace PriceTracker.Services
                     var newInfo = await _pullAndBearClient.GetItemInfoAsync(item.Url);
                     if (newInfo != null)
                     {
-                        await _trackingRepository.UpdateInfoOfItemAsync(item.ItemId, newInfo.Status, newInfo.Price, newInfo.PriceCurrency, newInfo.Name, newInfo.Image);
+                        await _trackingRepository.UpdateInfoOfItemAsync(item.ItemId, newInfo);
                         if (item.Status != newInfo.Status || item.Price != newInfo.Price)
                         {
                             try
@@ -67,11 +73,7 @@ Current: {newInfo.Price} {newInfo.PriceCurrency}
                             }
                             catch (Exception ex) { }
                         }
-                        item.Status = newInfo.Status;
-                        item.Price = newInfo.Price;
-                        item.PriceCurrency = newInfo.PriceCurrency;
-                        item.Name = newInfo.Name;
-                        item.Image = newInfo.Image;
+                        item = _updateInfoHelper.GetUpdatedItem(item, newInfo);
                     }
                 }
                 catch (Exception ex) { }
@@ -110,19 +112,14 @@ Current: {newInfo.Price} {newInfo.PriceCurrency}
             else
             {
                 var newInfo = await _pullAndBearClient.GetItemInfoAsync(url);
-                var newItem = new Item()
-                {
-                    Url = url,
-                    Status = null,
-                    Price = newInfo.Price,
-                    PriceCurrency = newInfo.PriceCurrency,
-                    Name = newInfo.Name,
-                    Image = newInfo.Image,
-                    StartTrackingDate = DateTime.Now,
-                    Source = "Pull&Bear",
-                    ChatId = message.Chat.Id,
-                    UserId = message.From.Id
-                };
+                var newItem = _mapper.Map<ItemOnline, Item>(newInfo);
+                newItem.Url = url;
+                newItem.StartTrackingDate = DateTime.Now;
+                newItem.Source = "Pull&Bear";
+                newItem.ChatId = message.Chat.Id;
+                newItem.UserId = message.From.Id;
+
+
 
                 var itemId = await _trackingRepository.AddNewItemAsync(newItem);
                 newItem.ItemId = itemId;

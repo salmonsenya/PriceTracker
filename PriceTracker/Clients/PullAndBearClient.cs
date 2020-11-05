@@ -23,7 +23,7 @@ namespace PriceTracker.Clients
             _parserHelper = parserHelper ?? throw new ArgumentNullException(nameof(parserHelper));
         }
 
-        public async Task<TrackingStatus> GetItemInfoAsync(string url)
+        public async Task<ItemOnline> GetItemInfoAsync(string url)
         {
             using (var httpResponseMessage = await _httpClient.GetAsync(new Uri(url)))
             {

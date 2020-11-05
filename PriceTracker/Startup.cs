@@ -1,11 +1,10 @@
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
-using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using PriceTracker.Clients;
-using PriceTracker.Models;
+using PriceTracker.Mapper;
 
 namespace PriceTracker
 {
@@ -26,6 +25,7 @@ namespace PriceTracker
             services.Configure<PullAndBearApiOptions>(Configuration.GetSection("ASOSApiOptions"));
             services.AddHttpClients(Configuration);
             services.AddServices(Configuration);
+            services.AddMapper();
             // services.AddDbContext<TrackingContext>(options =>
             //    options.UseMySql(Configuration.GetConnectionString("TrackingContext")));
         }

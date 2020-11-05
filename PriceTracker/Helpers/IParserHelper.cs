@@ -4,6 +4,6 @@ namespace PriceTracker.Helpers
 {
     public interface IParserHelper
     {
-        TrackingStatus GetItemInfo(string input);
+        ItemOnline GetItemInfo(string input);
     }
 }
