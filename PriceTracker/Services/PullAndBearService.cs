@@ -109,7 +109,7 @@ Current: {newInfo.Price} {newInfo.PriceCurrency}
                 var itemId = await _trackingRepository.AddNewItemAsync(newItem);
                 newItem.ItemId = itemId;
                 itemsQueue.Enqueue(newItem);
-                await _botService.SendReplyMessage(
+                await _botService.SendReplyMessageMarkdownV2(
                     message.Chat.Id,
                     message.MessageId,
                     $@"
