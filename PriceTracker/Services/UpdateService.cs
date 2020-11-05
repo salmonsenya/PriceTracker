@@ -77,13 +77,29 @@ Current: {x.Price} {x.PriceCurrency}
                             catch (Exception ex) { }
                             return;
                         }
-                        await _pullAndBearService.RemoveItemAsync(itemMessage);
+                        try
+                        {
+                            await _pullAndBearService.RemoveItemAsync(itemMessage);
+                        } catch (Exception e)
+                        {
+                            try
+                            {
+                                await _botService.Client.SendTextMessageAsync(
+                                    chatId: message.Chat.Id,
+                                    replyToMessageId: message.MessageId,
+                                    parseMode: ParseMode.MarkdownV2,
+                                    disableWebPagePreview: false,
+                                    text: $@"{e.Message}"
+                                );
+                            }
+                            catch (Exception ex) { }
+                        }
                         try
                         {
                             await _botService.Client.SendTextMessageAsync(
                                 chatId: message.Chat.Id,
                                 replyToMessageId: message.MessageId,
-                                text: $@"Item was removed from cart."
+                                text: "Item was removed from cart."
                             );
                         }
                         catch (Exception ex) { }

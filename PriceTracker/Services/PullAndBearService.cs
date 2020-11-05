@@ -43,30 +43,38 @@ namespace PriceTracker.Services
             if (itemsQueue.Count > 0)
             {
                 var item = itemsQueue.Dequeue();
-                var newInfo = await _pullAndBearClient.GetItemInfoAsync(item.Url);
-                await _trackingRepository.UpdateInfoOfItemAsync(item.ItemId, newInfo.Status, newInfo.Price, newInfo.PriceCurrency, newInfo.Name, newInfo.Image);
-                if (item.Status != newInfo.Status || item.Price != newInfo.Price)
+                try
                 {
-                    try
+                    var newInfo = await _pullAndBearClient.GetItemInfoAsync(item.Url);
+                    if (newInfo != null)
                     {
-                        await _botService.Client.SendTextMessageAsync(
-                            chatId: item.ChatId,                         
-                            parseMode: ParseMode.MarkdownV2,
-                            disableWebPagePreview: false,
-                            text: $@"
+                        await _trackingRepository.UpdateInfoOfItemAsync(item.ItemId, newInfo.Status, newInfo.Price, newInfo.PriceCurrency, newInfo.Name, newInfo.Image);
+                        if (item.Status != newInfo.Status || item.Price != newInfo.Price)
+                        {
+                            try
+                            {
+                                await _botService.Client.SendTextMessageAsync(
+                                    chatId: item.ChatId,
+                                    parseMode: ParseMode.MarkdownV2,
+                                    disableWebPagePreview: false,
+                                    text: $@"
 Item price has been changed.
 *{item.Name}*
 Previous: {item.Price} {item.PriceCurrency}
 Current: {newInfo.Price} {newInfo.PriceCurrency}
 [View on site]({item.Url})
 ");
-                    } catch (Exception ex){}
+                            }
+                            catch (Exception ex) { }
+                        }
+                        item.Status = newInfo.Status;
+                        item.Price = newInfo.Price;
+                        item.PriceCurrency = newInfo.PriceCurrency;
+                        item.Name = newInfo.Name;
+                        item.Image = newInfo.Image;
+                    }
                 }
-                item.Status = newInfo.Status;
-                item.Price = newInfo.Price;
-                item.PriceCurrency = newInfo.PriceCurrency;
-                item.Name = newInfo.Name;
-                item.Image = newInfo.Image;
+                catch (Exception ex) { }
                 itemsQueue.Enqueue(item);
             }
         }
@@ -139,29 +147,76 @@ Current: {newItem.Price} {newItem.PriceCurrency}
         public async Task RemoveItemAsync(Message itemMessage)
         {
             var itemText = itemMessage.Text;
-            var url = Regex.Match(itemText, @"(http|ftp|https):\/\/([\w\-_]+(?:(?:\.[\w\-_]+)+))([\w\-\.,@?^=%&amp;:/~\+#]*[\w\-\@?^=%&amp;/~\+#])?").Value;
-            if (string.IsNullOrEmpty(url))
+            var firstLine = itemText.Substring(0, itemText.IndexOf(Environment.NewLine));
+
+            if (string.IsNullOrEmpty(firstLine))
             {
                 try
                 {
                     await _botService.Client.SendTextMessageAsync(
                         chatId: itemMessage.Chat.Id,
                         replyToMessageId: itemMessage.MessageId,
-                        text: "Link to item u want to delete wasn't found.");
+                        text: "Name of item u want to delete wasn't found.");
                 }
                 catch (Exception ex) { }
                 return;
             }
             // remove from queue
+            var removedFromQueue = false;
             for (int i = 0; i < itemsQueue.Count; i++)
             {
                 var item = itemsQueue.Dequeue();
-                if (item.Url.Equals(url)) break;
+                if (item.Name.Equals(firstLine))
+                {
+                    removedFromQueue = true;
+                    break;
+                }
                 itemsQueue.Enqueue(item);
             }
+            if (!removedFromQueue)
+            {
+                try
+                {
+                    await _botService.Client.SendTextMessageAsync(
+                        chatId: itemMessage.Chat.Id,
+                        replyToMessageId: itemMessage.MessageId,
+                        text: "Item could not be removed from queue.");
+                }
+                catch (Exception ex) { }
+                return;
+            }
+            try
+            {
+                await _botService.Client.SendTextMessageAsync(
+                    chatId: itemMessage.Chat.Id,
+                    replyToMessageId: itemMessage.MessageId,
+                    text: $@"Item was removed from queue.");
+            }
+            catch (Exception e) { }
 
             // remove from db
-            await _trackingRepository.RemoveItem(url);
+            try
+            {
+                await _trackingRepository.RemoveItem(firstLine);
+            } catch (Exception ex)
+            {
+                try
+                {
+                    await _botService.Client.SendTextMessageAsync(
+                        chatId: itemMessage.Chat.Id,
+                        replyToMessageId: itemMessage.MessageId,
+                        text: $@"{ex.Message}");
+                }
+                catch (Exception e) { }
+            }
+            try
+            {
+                await _botService.Client.SendTextMessageAsync(
+                    chatId: itemMessage.Chat.Id,
+                    replyToMessageId: itemMessage.MessageId,
+                    text: $@"Item was removed from DB.");
+            }
+            catch (Exception e) { }
         }
     }
 }

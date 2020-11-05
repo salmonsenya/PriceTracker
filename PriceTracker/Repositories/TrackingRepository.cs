@@ -1,5 +1,6 @@
 ﻿using Microsoft.EntityFrameworkCore;
 using PriceTracker.Models;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
@@ -44,12 +45,20 @@ namespace PriceTracker.Repositories
         public async Task RemoveItem(string url)
         {
             using var _trackingContext = new TrackingContext();
-            var itemToRemove = await _trackingContext.Items.SingleOrDefaultAsync(x => x.Url.Equals(url));
-            if (itemToRemove != null)
+            var itemToRemove = await _trackingContext.Items.SingleOrDefaultAsync(x => x.Name.Equals(url));
+            if (itemToRemove == null)
+            {
+                throw new System.Exception(message: "Item to remove could not be found in DB.");
+            }
+
+            try
             {
                 _trackingContext.Items.Remove(itemToRemove);
-                await _trackingContext.SaveChangesAsync();
+            } catch (Exception ex)
+            {
+                throw new System.Exception(message: "Item to remove could not be removed from DB.");
             }
+            await _trackingContext.SaveChangesAsync();
         }
     }
 }
