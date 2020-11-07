@@ -64,7 +64,7 @@ namespace PriceTracker.Services
                             await _pullAndBearService.AddNewItemAsync(message);
                         }
                         
-                        if (cartRegex.IsMatch(input))
+                        if (cartRegex.IsMatch(input) || input.Equals("cart"))
                         {
                             var items = await _pullAndBearService.GetTrackedItemsAsync();
                             if (items?.Count == 0)
