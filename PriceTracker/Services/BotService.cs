@@ -3,6 +3,7 @@ using System;
 using System.Threading.Tasks;
 using Telegram.Bot;
 using Telegram.Bot.Types.Enums;
+using Telegram.Bot.Types.ReplyMarkups;
 
 namespace PriceTracker.Services
 {
@@ -58,8 +59,14 @@ namespace PriceTracker.Services
             catch (Exception ex) { }
         }
 
-        public async Task SendMessageMarkdownV2(long chatId, int replyToMessageId, string text, bool buttons)
+        public async Task SendMessageButtonMarkdownV2(long chatId, int replyToMessageId, string text)
         {
+            var inlineKeyboardButton = new InlineKeyboardButton
+            {
+                Text = "remove",
+                CallbackData = "remove"
+            };
+            var keyboard = new InlineKeyboardMarkup(inlineKeyboardButton);
             try
             {
                 await Client.SendTextMessageAsync(
@@ -67,6 +74,7 @@ namespace PriceTracker.Services
                     replyToMessageId: replyToMessageId,
                     parseMode: ParseMode.MarkdownV2,
                     disableWebPagePreview: false,
+                    replyMarkup: keyboard,
                     text: text);
             }
             catch (Exception ex) { }

@@ -23,79 +23,97 @@ namespace PriceTracker.Services
 
         public async Task ReplyAsync(Update update)
         {
-            if (update.Type != UpdateType.Message)
-                return;
-
-            var message = update.Message;
-            if (message.Type == MessageType.Text)
+            if (update.CallbackQuery != null)
             {
-                var input = message.Text;
-                if (input != null)
-                {
-                    if (addRegex.IsMatch(input))
-                    {
-                        await _pullAndBearService.AddNewItemAsync(message);
-                    }
+                var message = update.CallbackQuery.Message;
+                var queryData = update.CallbackQuery.Data;
 
-                    if (cartRegex.IsMatch(input))
+                if (queryData.Equals("remove"))
+                {
+                    try
                     {
-                        var items = await _pullAndBearService.GetTrackedItemsAsync();
-                        var userItems = items.Where(x => x.UserId == message.From.Id).Select(x => $@"
+                        await _pullAndBearService.RemoveItemAsync(message);
+                    }
+                    catch (Exception e)
+                    {
+                        await _botService.SendMessageMarkdownV2(
+                                message.Chat.Id,
+                                message.MessageId,
+                                $@"{e.Message}");
+                    }
+                    await _botService.SendMessage(
+                            message.Chat.Id,
+                            message.MessageId,
+                            "Item was removed from cart."); 
+                }
+
+            }
+            if (update.Type == UpdateType.Message)
+            {
+                var message = update.Message;
+                if (message.Type == MessageType.Text)
+                {
+                    var input = message.Text;
+                    
+                    if (input != null)
+                    {
+                        if (addRegex.IsMatch(input))
+                        {
+                            await _pullAndBearService.AddNewItemAsync(message);
+                        }
+                        
+                        if (cartRegex.IsMatch(input))
+                        {
+                            var items = await _pullAndBearService.GetTrackedItemsAsync();
+                            if (items?.Count == 0)
+                            {
+                                await _botService.SendMessage(
+                                        message.Chat.Id,
+                                        message.MessageId,
+                                        "Your cart is empty.");
+                            }
+                            var userItems = items.Where(x => x.UserId == message.From.Id).Select(x => $@"
 *{x.Name}*
 Current: {x.Price} {x.PriceCurrency}
 [View on site]({x.Url})
 ");
-                        foreach (var item in userItems)
-                        {
-                            try
+                            foreach (var item in userItems)
                             {
-                                await _botService.SendMessageMarkdownV2(
-                                    message.Chat.Id,
-                                    message.MessageId,
-                                    $@"{item}");
+                                await _botService.SendMessageButtonMarkdownV2(
+                                        message.Chat.Id,
+                                        message.MessageId,
+                                        $@"{item}");
                             }
-                            catch (Exception ex) { }
                         }
-                    }
-
-                    if (removeRegex.IsMatch(input))
-                    {
-                        var itemMessage = message.ReplyToMessage;
-                        if (itemMessage == null)
+                        
+                        if (removeRegex.IsMatch(input))
                         {
-                            try
+                            var itemMessage = message.ReplyToMessage;
+                            if (itemMessage == null)
                             {
                                 await _botService.SendMessage(
-                                    message.Chat.Id,
-                                    message.MessageId,
-                                    "Reply to message with item you want to remove from cart.");
+                                        message.Chat.Id,
+                                        message.MessageId,
+                                        "Reply to message with item you want to remove from cart.");
+                                return;
                             }
-                            catch (Exception ex) { }
-                            return;
-                        }
-                        try
-                        {
-                            await _pullAndBearService.RemoveItemAsync(itemMessage);
-                        } catch (Exception e)
-                        {
                             try
                             {
+                                await _pullAndBearService.RemoveItemAsync(itemMessage);
+                            }
+                            catch (Exception e)
+                            {
                                 await _botService.SendMessageMarkdownV2(
+                                        message.Chat.Id,
+                                        message.MessageId,
+                                        $@"{e.Message}");
+                            }
+                            await _botService.SendMessage(
                                     message.Chat.Id,
                                     message.MessageId,
-                                    $@"{e.Message}");
-                            }
-                            catch (Exception ex) { }
+                                    "Item was removed from cart."
+                                );
                         }
-                        try
-                        {
-                            await _botService.SendMessage(
-                                message.Chat.Id,
-                                message.MessageId,
-                                "Item was removed from cart."
-                            );
-                        }
-                        catch (Exception ex) { }
                     }
                 }
             }
