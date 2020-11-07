@@ -1,5 +1,6 @@
 ﻿using Microsoft.Extensions.Options;
 using System;
+using System.Collections.Generic;
 using System.Threading.Tasks;
 using Telegram.Bot;
 using Telegram.Bot.Types.Enums;
@@ -12,6 +13,11 @@ namespace PriceTracker.Services
         private readonly BotOptions _botOptions;
         private readonly string botToken;
         public TelegramBotClient Client { get;  }
+
+        private readonly ReplyKeyboardMarkup keyboard = new ReplyKeyboardMarkup
+        {
+            Keyboard = new List<List<KeyboardButton>>() { new List<KeyboardButton>() { new KeyboardButton(text: "cart") } }
+        };
 
         public BotService(IOptions<BotOptions> botOptions)
         {
@@ -27,7 +33,8 @@ namespace PriceTracker.Services
                 await Client.SendTextMessageAsync(
                     chatId: chatId,
                     replyToMessageId: replyToMessageId,
-                    text: text);
+                    text: text,
+                    replyMarkup: keyboard);
             }
             catch (Exception ex) { }
         }
@@ -41,7 +48,8 @@ namespace PriceTracker.Services
                     replyToMessageId: replyToMessageId,
                     parseMode: ParseMode.MarkdownV2,
                     disableWebPagePreview: false,
-                    text: text);
+                    text: text,
+                    replyMarkup: keyboard);
             }
             catch (Exception ex) { }
         }
@@ -54,7 +62,8 @@ namespace PriceTracker.Services
                     chatId: chatId,
                     parseMode: ParseMode.MarkdownV2,
                     disableWebPagePreview: false,
-                    text: text);
+                    text: text,
+                    replyMarkup: keyboard);
             }
             catch (Exception ex) { }
         }

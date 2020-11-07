@@ -19,6 +19,8 @@ namespace PriceTracker.Services
         {
             _pullAndBearService = asosService ?? throw new ArgumentNullException(nameof(asosService));
             _botService = botService ?? throw new ArgumentNullException(nameof(botService));
+
+
         }
 
         public async Task ReplyAsync(Update update)
@@ -85,7 +87,21 @@ Current: {x.Price} {x.PriceCurrency}
                                         $@"{item}");
                             }
                         }
-                        
+
+                        if (input.Equals("/start"))
+                        {
+                            await _botService.SendMessageMarkdownV2(
+                                        message.Chat.Id,
+                                        "Start");
+                        }
+
+                        if (input.Equals("/help"))
+                        {
+                            await _botService.SendMessageMarkdownV2(
+                                        message.Chat.Id,
+                                        "Help");
+                        }
+
                         if (removeRegex.IsMatch(input))
                         {
                             var itemMessage = message.ReplyToMessage;
