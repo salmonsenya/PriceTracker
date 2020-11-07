@@ -59,6 +59,13 @@ namespace PriceTracker.Services
                     
                     if (input != null)
                     {
+                        if (input.Equals("add"))
+                        {
+                            await _botService.SendMessage(
+                    message.Chat.Id,
+                    message.MessageId,
+                    "Insert a link of item you want to add for tracking after command /add + space.");
+                        }
                         if (addRegex.IsMatch(input))
                         {
                             await _pullAndBearService.AddNewItemAsync(message);
@@ -102,6 +109,13 @@ Current: {x.Price} {x.PriceCurrency}
                                         "Help");
                         }
 
+                        if (input.Equals("remove"))
+                        {
+                            await _botService.SendMessage(
+                                        message.Chat.Id,
+                                        message.MessageId,
+                                        "Reply with /remove to message with item you want to remove from cart or use inline button remove after /cart command.");
+                        }
                         if (removeRegex.IsMatch(input))
                         {
                             var itemMessage = message.ReplyToMessage;
@@ -110,7 +124,7 @@ Current: {x.Price} {x.PriceCurrency}
                                 await _botService.SendMessage(
                                         message.Chat.Id,
                                         message.MessageId,
-                                        "Reply to message with item you want to remove from cart.");
+                                        "Reply with /remove to message with item you want to remove from cart or use inline button remove after /cart command.");
                                 return;
                             }
                             try

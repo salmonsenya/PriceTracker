@@ -16,7 +16,10 @@ namespace PriceTracker.Services
 
         private readonly ReplyKeyboardMarkup keyboard = new ReplyKeyboardMarkup
         {
-            Keyboard = new List<List<KeyboardButton>>() { new List<KeyboardButton>() { new KeyboardButton(text: "cart") } }
+            Keyboard = new List<List<KeyboardButton>>() { new List<KeyboardButton>() { 
+                new KeyboardButton(text: "cart"),
+                new KeyboardButton(text: "add"),
+                new KeyboardButton(text: "remove")} }
         };
 
         public BotService(IOptions<BotOptions> botOptions)
