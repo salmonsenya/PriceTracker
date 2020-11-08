@@ -16,6 +16,32 @@ namespace PriceTracker.Repositories
             _updateInfoHelper = updateInfoHelper ?? throw new ArgumentNullException(nameof(updateInfoHelper));
         }
 
+        public async Task<bool> IsWaitingForAdd(int userId){
+            using var _trackingContext = new TrackingContext();
+            var userStatus = await _trackingContext.UserStatuses.Where(x => x.UserId == userId).FirstOrDefaultAsync();
+            if (userStatus == null)
+            {
+                await AddUserStatus(userId);
+                userStatus = await _trackingContext.UserStatuses.Where(x => x.UserId == userId).FirstOrDefaultAsync();
+            }
+            return userStatus.waitingForAdd;
+        }
+
+        public async Task AddUserStatus(int userId)
+        {
+            using var _trackingContext = new TrackingContext();
+            _trackingContext.UserStatuses.Add(new UserStatus { UserId = userId, waitingForAdd = false });
+            await _trackingContext.SaveChangesAsync();
+        }
+
+        public async Task SetWaitingForAdd(int userId, bool newValue)
+        {
+            using var _trackingContext = new TrackingContext();
+            var userStatus = await _trackingContext.UserStatuses.Where(x => x.UserId == userId).FirstOrDefaultAsync();
+            userStatus.waitingForAdd = newValue;
+            await _trackingContext.SaveChangesAsync();
+        }
+
         public async Task<int> AddNewItemAsync(Item item)
         {
             using var _trackingContext = new TrackingContext();
