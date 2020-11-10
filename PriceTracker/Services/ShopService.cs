@@ -9,28 +9,38 @@ using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 using System.Timers;
 using Telegram.Bot.Types;
+using PriceTracker.Consts;
 
 namespace PriceTracker.Services
 {
-    public class PullAndBearService : IPullAndBearService
+    public class ShopService : IShopService
     {
         private readonly IBotService _botService;
         private readonly ITrackingRepository _trackingRepository;
-        private readonly IPullAndBearClient _pullAndBearClient;
+        private readonly IShopClient _pullAndBearClient;
         private readonly IMapper _mapper;
         private readonly IUpdateInfoHelper _updateInfoHelper;
-        private const string urlTemplate = @"(http|ftp|https):\/\/([\w\-_]+(?:(?:\.[\w\-_]+)+))([\w\-\.,@?^=%&amp;:/~\+#]*[\w\-\@?^=%&amp;/~\+#])?";
+        private readonly IShopDefiner _shopDefiner;
 
         private Queue<Item> itemsQueue;
         private Timer timer;
 
-        public PullAndBearService(IBotService botService, ITrackingRepository trackingRepository, IPullAndBearClient pullAndBearClient, IMapper mapper, IUpdateInfoHelper updateInfoHelper)
+        private const string UNKNOWN_SHOP = "Unknown shop.";
+
+        public ShopService(
+            IBotService botService,
+            ITrackingRepository trackingRepository,
+            IShopClient pullAndBearClient,
+            IMapper mapper,
+            IUpdateInfoHelper updateInfoHelper,
+            IShopDefiner shopDefiner)
         {
             _botService = botService ?? throw new ArgumentNullException(nameof(botService));
             _trackingRepository = trackingRepository ?? throw new ArgumentNullException(nameof(trackingRepository));
             _pullAndBearClient = pullAndBearClient ?? throw new ArgumentNullException(nameof(pullAndBearClient));
             _mapper = mapper ?? throw new ArgumentNullException(nameof(mapper));
             _updateInfoHelper = updateInfoHelper ?? throw new ArgumentNullException(nameof(updateInfoHelper));
+            _shopDefiner = shopDefiner ?? throw new ArgumentNullException(nameof(shopDefiner));
 
             List<Item> existedItems = _trackingRepository.GetItemsAsync().Result;
             itemsQueue = existedItems?.Count > 0 ? new Queue<Item>(existedItems) : new Queue<Item>();
@@ -51,7 +61,18 @@ namespace PriceTracker.Services
                 var item = itemsQueue.Dequeue();
                 try
                 {
-                    var newInfo = await _pullAndBearClient.GetItemInfoAsync(item.Url);
+                    ItemOnline newInfo = null;
+                    try
+                    {
+                        string shopName = item.Source;
+                        if (shopName.Equals(PullAndBear.SHOP_NAME))
+                        {
+                            newInfo = await _pullAndBearClient.GetItemInfoAsync(item.Url);
+                        }
+                    } catch (Exception ex)
+                    {
+                        // it's ok; lets update item information next time;
+                    }
                     if (newInfo != null)
                     {
                         await _trackingRepository.UpdateInfoOfItemAsync(item.ItemId, newInfo);
@@ -78,7 +99,7 @@ Current: {newInfo.Price} {newInfo.PriceCurrency}
         public async Task AddNewItemAsync(Message message)
         {
             var input = message.Text;
-            var url = Regex.Match(input, urlTemplate).Value;
+            var url = Regex.Match(input, Common.UrlTemplate).Value;
             if (string.IsNullOrEmpty(url))
             {
                 await _botService.SendMessage(
@@ -97,11 +118,30 @@ Current: {newInfo.Price} {newInfo.PriceCurrency}
             }
             else
             {
-                var newInfo = await _pullAndBearClient.GetItemInfoAsync(url);
+                ItemOnline newInfo;
+                try
+                {
+                    var shopName = _shopDefiner.GetShopName(url);
+                    newInfo = shopName switch
+                    {
+                        PullAndBear.SHOP_NAME => await _pullAndBearClient.GetItemInfoAsync(url),
+                        _ => throw new Exception(UNKNOWN_SHOP),
+                    };
+                }
+                catch (Exception ex)
+                {
+                    // it's not ok; we can't add this item;
+                    await _botService.SendMessage(
+                        message.Chat.Id,
+                        message.MessageId,
+                        $"Item could not be added for tracking. Some problems occured. {ex.Message}");
+                    return;
+                }
+
                 var newItem = _mapper.Map<ItemOnline, Item>(newInfo);
                 newItem.Url = url;
                 newItem.StartTrackingDate = DateTime.Now;
-                newItem.Source = "Pull&Bear";
+                newItem.Source = PullAndBear.SHOP_NAME;
                 newItem.ChatId = message.Chat.Id;
                 newItem.UserId = message.From.Id;
 

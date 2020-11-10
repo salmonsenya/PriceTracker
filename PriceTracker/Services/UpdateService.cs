@@ -1,34 +1,36 @@
 ﻿using PriceTracker.Repositories;
 using System;
+using System.Collections.Generic;
 using System.Linq;
 using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 using Telegram.Bot.Types;
 using Telegram.Bot.Types.Enums;
+using PriceTracker.Consts;
 
 namespace PriceTracker.Services
 {
     public class UpdateService : IUpdateService
     {
-        private readonly Regex addRegex = new Regex(@"^(/add)");
-        private readonly IPullAndBearService _pullAndBearService;
+        private readonly Regex addRegex = new Regex($@"^(/{Commands.ADD})");
+        private readonly Regex addRegexBot = new Regex($@"^(/{Commands.ADD}@{Common.BOT_NAME})");
+        private readonly IShopService _pullAndBearService;
         private readonly IBotService _botService;
         private readonly ITrackingRepository _trackingRepository;
-        private const string urlTemplate = @"(http|ftp|https):\/\/([\w\-_]+(?:(?:\.[\w\-_]+)+))([\w\-\.,@?^=%&amp;:/~\+#]*[\w\-\@?^=%&amp;/~\+#])?";
-        private const string ADD = "add";
-        private const string CART = "cart";
-        private const string REMOVE = "remove";
-        private const string START = "start";
-        private const string HELP = "help";
-        private const string HELP_TEXT = @"
-/start - send start message
-/help - show help
-/add {link_to_item} - add link to the item you want to track
-add - add link to the item you want to track in the next message to bot
-/cart - see your tracked items
-cart - see your tracked items";
+        
+        private readonly string HELP_TEXT = $@"
+PULL&BEAR items are only available for tracking at this moment.
 
-        public UpdateService(IPullAndBearService asosService, IBotService botService, ITrackingRepository trackingRepository)
+/{Commands.START} - send start message
+/{Commands.HELP} - show help
+{Commands.HELP} - show help
+/{Commands.ADD} link_to_item - add link to the item you want to track
+{Commands.ADD} - add link to the item you want to track in the next message to bot
+/{Commands.CART} - see your tracked items
+{Commands.CART} - see your tracked items
+{Commands.CANCEL} - cancel adding of item";
+
+        public UpdateService(IShopService asosService, IBotService botService, ITrackingRepository trackingRepository)
         {
             _pullAndBearService = asosService ?? throw new ArgumentNullException(nameof(asosService));
             _botService = botService ?? throw new ArgumentNullException(nameof(botService));
@@ -42,7 +44,7 @@ cart - see your tracked items";
                 var message = update.CallbackQuery.Message;
                 var queryData = update.CallbackQuery.Data;
 
-                if (queryData.Equals(REMOVE))
+                if (queryData.Equals(Commands.REMOVE))
                 {
                     try
                     {
@@ -81,7 +83,12 @@ cart - see your tracked items";
                             isWaitingForAdd = await _trackingRepository.IsWaitingForAddAsync(message.From.Id);
                         }
 
-                        if (input.Equals(ADD))
+                        if (input.Equals(Commands.CANCEL))
+                        {
+                            await _trackingRepository.SetWaitingForAddAsync(message.From.Id, false);
+                            return;
+                        }
+                        if (input.Equals(Commands.ADD))
                         {
                             await _trackingRepository.SetWaitingForAddAsync(message.From.Id, true);
                             await _botService.SendMessage(
@@ -89,13 +96,12 @@ cart - see your tracked items";
                                 message.MessageId,
                                 "Insert a link of item you want to add.");
                         }
-                        else if (addRegex.IsMatch(input))
+                        else if (addRegex.IsMatch(input) || addRegexBot.IsMatch(input))
                         {
                             await _trackingRepository.SetWaitingForAddAsync(message.From.Id, false);
                             await _pullAndBearService.AddNewItemAsync(message);
                         }
-
-                        else if (input.Equals($"/{CART}") || input.Equals(CART))
+                        else if (new List<string>() { $"/{Commands.CART}", Commands.CART, $"/{Commands.CART}@{Common.BOT_NAME}" }.Contains(input))
                         {
                             await _trackingRepository.SetWaitingForAddAsync(message.From.Id, false);
                             var items = await _pullAndBearService.GetTrackedItemsAsync();
@@ -120,7 +126,7 @@ Current: {x.Price} {x.PriceCurrency}
                                 }
                             }
 
-                            else if (input.Equals($"/{START}"))
+                            else if (input.Equals($"/{Commands.START}") || input.Equals($"/{Commands.START}@{Common.BOT_NAME}"))
                             {
                             await _trackingRepository.SetWaitingForAddAsync(message.From.Id, false);
                             await _botService.SendMessage(
@@ -128,7 +134,7 @@ Current: {x.Price} {x.PriceCurrency}
                                             $"{HELP_TEXT}");
                             }
 
-                            else if (input.Equals($"/{HELP}"))
+                            else if (input.Equals($"/{Commands.HELP}") || input.Equals($"{Commands.HELP}") || input.Equals($"/{Commands.HELP}@{Common.BOT_NAME}"))
                             {
                             await _trackingRepository.SetWaitingForAddAsync(message.From.Id, false);
                             await _botService.SendMessage(
@@ -138,7 +144,7 @@ Current: {x.Price} {x.PriceCurrency}
 
                         else if (isWaitingForAdd)
                         {
-                            var url = Regex.Match(input, urlTemplate).Value;
+                            var url = Regex.Match(input, Common.UrlTemplate).Value;
                             if (string.IsNullOrEmpty(url))
                             {
                                 await _botService.SendMessage(

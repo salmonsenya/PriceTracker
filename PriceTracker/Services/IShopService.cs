@@ -5,7 +5,7 @@ using Telegram.Bot.Types;
 
 namespace PriceTracker.Services
 {
-    public interface IPullAndBearService
+    public interface IShopService
     {
         Task AddNewItemAsync(Message message);
 

@@ -10,10 +10,10 @@ namespace PriceTracker.Controllers
     [Route("test")]
     public class TestController : Controller
     {
-        private readonly IPullAndBearService _pullAndBearService;
+        private readonly IShopService _pullAndBearService;
         private readonly ITrackingRepository _trackingRepository; 
 
-        public TestController(IPullAndBearService pullAndBearService, ITrackingRepository trackingRepository)
+        public TestController(IShopService pullAndBearService, ITrackingRepository trackingRepository)
         {
             _pullAndBearService = pullAndBearService ?? throw new ArgumentNullException(nameof(pullAndBearService));
             _trackingRepository = trackingRepository ?? throw new ArgumentNullException(nameof(trackingRepository));

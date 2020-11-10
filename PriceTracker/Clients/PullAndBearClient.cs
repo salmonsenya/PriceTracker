@@ -1,6 +1,4 @@
-﻿using Microsoft.AspNetCore.Mvc;
-using Microsoft.Extensions.Options;
-using Newtonsoft.Json;
+﻿using Microsoft.Extensions.Options;
 using PriceTracker.Helpers;
 using PriceTracker.Models;
 using System;
@@ -9,12 +7,13 @@ using System.Threading.Tasks;
 
 namespace PriceTracker.Clients
 {
-    public class PullAndBearClient : IPullAndBearClient
+    public class PullAndBearClient : IShopClient
     {
         private HttpClient _httpClient;
-        private readonly IParserHelper _parserHelper;
+        private readonly IParser _parserHelper;
+        private const string HTTP_EXCEPTION = "The HTTP status code of the response was not expected";
 
-        public PullAndBearClient(HttpClient httpClient, IOptions<PullAndBearApiOptions> options, IParserHelper parserHelper)
+        public PullAndBearClient(HttpClient httpClient, IOptions<PullAndBearApiOptions> options, IParser parserHelper)
         {
             _httpClient = httpClient ?? throw new ArgumentNullException(nameof(httpClient));
             _httpClient.DefaultRequestHeaders.Add("Accept", "*/*");
@@ -29,11 +28,10 @@ namespace PriceTracker.Clients
             {
                 if (!httpResponseMessage.IsSuccessStatusCode)
                 {
-                    throw new Exception("The HTTP status code of the response was not expected (" + httpResponseMessage.StatusCode + ").");
+                    throw new Exception($"{HTTP_EXCEPTION} ({httpResponseMessage.StatusCode}).");
                 }
                 var responseString = await httpResponseMessage.Content.ReadAsStringAsync();
                 var itemInfo = _parserHelper.GetItemInfo(responseString);
-
                 return itemInfo;
             }
         }

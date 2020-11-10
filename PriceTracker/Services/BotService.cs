@@ -5,6 +5,7 @@ using System.Threading.Tasks;
 using Telegram.Bot;
 using Telegram.Bot.Types.Enums;
 using Telegram.Bot.Types.ReplyMarkups;
+using PriceTracker.Consts;
 
 namespace PriceTracker.Services
 {
@@ -17,8 +18,10 @@ namespace PriceTracker.Services
         private readonly ReplyKeyboardMarkup keyboard = new ReplyKeyboardMarkup
         {
             Keyboard = new List<List<KeyboardButton>>() { new List<KeyboardButton>() { 
-                new KeyboardButton(text: "cart"),
-                new KeyboardButton(text: "add")} }
+                new KeyboardButton(text: $"{Commands.CART}"),
+                new KeyboardButton(text: $"{Commands.ADD}"),
+                new KeyboardButton(text: $"{Commands.HELP}"),
+                new KeyboardButton(text: $"{Commands.CANCEL}")} }
         };
 
         public BotService(IOptions<BotOptions> botOptions)
@@ -86,8 +89,8 @@ namespace PriceTracker.Services
         {
             var inlineKeyboardButton = new InlineKeyboardButton
             {
-                Text = "remove",
-                CallbackData = "remove"
+                Text = $"{Commands.REMOVE}",
+                CallbackData = $"{Commands.REMOVE}"
             };
             var keyboard = new InlineKeyboardMarkup(inlineKeyboardButton);
             try

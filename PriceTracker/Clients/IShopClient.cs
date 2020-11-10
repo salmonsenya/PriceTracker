@@ -3,7 +3,7 @@ using System.Threading.Tasks;
 
 namespace PriceTracker.Clients
 {
-    public interface IPullAndBearClient
+    public interface IShopClient
     {
         Task<ItemOnline> GetItemInfoAsync(string paramUrl);
     }

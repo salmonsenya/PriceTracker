@@ -11,17 +11,18 @@ namespace PriceTracker
     {
         public static void AddHttpClients(this IServiceCollection services, IConfiguration configuration)
         {
-            services.AddHttpClient<IPullAndBearClient, PullAndBearClient>();
+            services.AddHttpClient<IShopClient, PullAndBearClient>();
         }
 
         public static void AddServices(this IServiceCollection services, IConfiguration configuration)
         {
-            services.AddSingleton<IParserHelper, ParserHelper>();
+            services.AddSingleton<IParser, PullAndBearParser>();
             services.AddSingleton<IUpdateInfoHelper, UpdateInfoHelper>();
             services.AddSingleton<IBotService, BotService>();
             services.AddScoped<ITrackingRepository, TrackingRepository>();
-            services.AddScoped<IPullAndBearService, PullAndBearService>();
+            services.AddScoped<IShopService, ShopService>();
             services.AddScoped<IUpdateService, UpdateService>();
+            services.AddSingleton<IShopDefiner, ShopDefiner>();
         }
     }
 }
