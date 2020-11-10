@@ -7,19 +7,19 @@ using System.Threading.Tasks;
 
 namespace PriceTracker.Clients
 {
-    public class PullAndBearClient : IPullAndBearClient
+    public class BershkaClient : IBershkaClient
     {
         private HttpClient _httpClient;
-        private readonly IPullAndBearParser _parserHelper;
+        private readonly IBershkaParser _parserHelper;
         private const string HTTP_EXCEPTION = "The HTTP status code of the response was not expected";
 
-        public PullAndBearClient(HttpClient httpClient, IOptions<PullAndBearApiOptions> options, IPullAndBearParser parserHelper)
+        public BershkaClient(HttpClient httpClient, IOptions<PullAndBearApiOptions> options, IBershkaParser bershkaHelper)
         {
             _httpClient = httpClient ?? throw new ArgumentNullException(nameof(httpClient));
             _httpClient.DefaultRequestHeaders.Add("Accept", "*/*");
             _httpClient.DefaultRequestHeaders.Add("Connection", "keep-alive");
 
-            _parserHelper = parserHelper ?? throw new ArgumentNullException(nameof(parserHelper));
+            _parserHelper = bershkaHelper ?? throw new ArgumentNullException(nameof(bershkaHelper));
         }
 
         public async Task<ItemOnline> GetItemInfoAsync(string url)

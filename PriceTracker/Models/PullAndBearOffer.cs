@@ -8,8 +8,6 @@
 
         public string url { get; set; }
 
-        public string category { get; set; }
-
         public string eligibleRegion { get; set; }
     }
 }

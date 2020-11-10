@@ -10,6 +10,8 @@ namespace PriceTracker.Helpers
         {
             if (url.Contains(PullAndBear.URL))
                 return PullAndBear.SHOP_NAME;
+            if (url.Contains(Bershka.URL))
+                return Bershka.SHOP_NAME;
             else
             {
                 throw new Exception(NOT_DEFINED);

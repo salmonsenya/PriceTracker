@@ -19,7 +19,7 @@ namespace PriceTracker.Services
         private readonly ITrackingRepository _trackingRepository;
         
         private readonly string HELP_TEXT = $@"
-PULL&BEAR items are only available for tracking at this moment.
+PULL&BEAR and Bershka items are only available for tracking at this moment.
 
 /{Commands.START} - send start message
 /{Commands.HELP} - show help

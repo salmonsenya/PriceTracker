@@ -1,6 +1,6 @@
 ﻿namespace PriceTracker.Models
 {
-    public class PullAndBearProduct
+    public class BershkaProduct
     {
         public string logo { get; set; }
 
@@ -12,6 +12,6 @@
 
         public string brand { get; set; }
 
-        public PullAndBearOffer offers { get; set; }
+        public PullAndBearOffer[] offers { get; set; }
     }
 }

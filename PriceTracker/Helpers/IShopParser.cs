@@ -2,7 +2,7 @@
 
 namespace PriceTracker.Helpers
 {
-    public interface IParser
+    public interface IShopParser
     {
         ItemOnline GetItemInfo(string input);
     }

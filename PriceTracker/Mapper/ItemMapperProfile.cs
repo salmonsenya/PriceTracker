@@ -1,5 +1,7 @@
 ﻿using AutoMapper;
 using PriceTracker.Models;
+using System;
+using System.Globalization;
 
 namespace PriceTracker.Mapper
 {
@@ -19,6 +21,12 @@ namespace PriceTracker.Mapper
                 .ForMember(_ => _.Image, opt => opt.MapFrom(_ => _.image))
                 .ForMember(_ => _.Price, opt => opt.MapFrom(_ => int.Parse(_.offers.price)))
                 .ForMember(_ => _.PriceCurrency, opt => opt.MapFrom(_ => _.offers.priceCurrency));
+
+            CreateMap<BershkaProduct, ItemOnline>()
+                .ForMember(_ => _.Name, opt => opt.MapFrom(_ => _.name))
+                .ForMember(_ => _.Image, opt => opt.MapFrom(_ => _.image))
+                .ForMember(_ => _.Price, opt => opt.MapFrom(_ => Convert.ToInt32(double.Parse(_.offers[0].price, CultureInfo.InvariantCulture))))
+                .ForMember(_ => _.PriceCurrency, opt => opt.MapFrom(_ => _.offers[0].priceCurrency));
         }
     }
 }

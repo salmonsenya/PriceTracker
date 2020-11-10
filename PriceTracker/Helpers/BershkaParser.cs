@@ -1,37 +1,38 @@
 ﻿using AutoMapper;
 using HtmlAgilityPack;
 using Newtonsoft.Json;
+using PriceTracker.Consts;
 using PriceTracker.Models;
 using System;
-using PriceTracker.Consts;
 
 namespace PriceTracker.Helpers
 {
-    public class PullAndBearParser : IPullAndBearParser
+    public class BershkaParser : IBershkaParser
     {
         private readonly IMapper _mapper;
         private const string PARSING_EXCEPTION = "Page could not be parsed.";
         private const string XPATH_EXCEPTION = "XML path could not be found on page.";
-        private readonly string xpath = PullAndBear.XPATH;
+        private readonly string xpath = Bershka.XPATH;
 
-        public PullAndBearParser(IMapper mapper)
+        public BershkaParser(IMapper mapper)
         {
             _mapper = mapper ?? throw new ArgumentNullException(nameof(mapper));
         }
 
         public ItemOnline GetItemInfo(string input)
         {
-            ItemOnline newInfo = null;
             var htmlDocument = new HtmlDocument();
             htmlDocument.LoadHtml(input);
+            ItemOnline newInfo;
             try
             {
                 var text = htmlDocument.DocumentNode.SelectSingleNode(xpath)?.InnerText;
                 if (text == null) throw new Exception(XPATH_EXCEPTION);
-                var product = JsonConvert.DeserializeObject<PullAndBearProduct>(text);
-                newInfo = _mapper.Map<PullAndBearProduct, ItemOnline>(product);
+                var product = JsonConvert.DeserializeObject<BershkaProduct>(text);
+                newInfo = _mapper.Map<BershkaProduct, ItemOnline>(product);
                 newInfo.Status = null;
-            } catch (Exception ex)
+            }
+            catch (Exception ex)
             {
                 throw ex.Message.Equals(XPATH_EXCEPTION) ? new Exception(XPATH_EXCEPTION) : new Exception(PARSING_EXCEPTION);
             }

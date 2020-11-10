@@ -17,7 +17,8 @@ namespace PriceTracker.Services
     {
         private readonly IBotService _botService;
         private readonly ITrackingRepository _trackingRepository;
-        private readonly IShopClient _pullAndBearClient;
+        private readonly IPullAndBearClient _pullAndBearClient;
+        private readonly IBershkaClient _bershkaClient;
         private readonly IMapper _mapper;
         private readonly IUpdateInfoHelper _updateInfoHelper;
         private readonly IShopDefiner _shopDefiner;
@@ -30,7 +31,8 @@ namespace PriceTracker.Services
         public ShopService(
             IBotService botService,
             ITrackingRepository trackingRepository,
-            IShopClient pullAndBearClient,
+            IPullAndBearClient pullAndBearClient,
+            IBershkaClient bershkaClient,
             IMapper mapper,
             IUpdateInfoHelper updateInfoHelper,
             IShopDefiner shopDefiner)
@@ -38,6 +40,7 @@ namespace PriceTracker.Services
             _botService = botService ?? throw new ArgumentNullException(nameof(botService));
             _trackingRepository = trackingRepository ?? throw new ArgumentNullException(nameof(trackingRepository));
             _pullAndBearClient = pullAndBearClient ?? throw new ArgumentNullException(nameof(pullAndBearClient));
+            _bershkaClient = bershkaClient ?? throw new ArgumentNullException(nameof(bershkaClient));
             _mapper = mapper ?? throw new ArgumentNullException(nameof(mapper));
             _updateInfoHelper = updateInfoHelper ?? throw new ArgumentNullException(nameof(updateInfoHelper));
             _shopDefiner = shopDefiner ?? throw new ArgumentNullException(nameof(shopDefiner));
@@ -64,11 +67,13 @@ namespace PriceTracker.Services
                     ItemOnline newInfo = null;
                     try
                     {
-                        string shopName = item.Source;
-                        if (shopName.Equals(PullAndBear.SHOP_NAME))
+                        var shopName = item.Source;
+                        newInfo = shopName switch
                         {
-                            newInfo = await _pullAndBearClient.GetItemInfoAsync(item.Url);
-                        }
+                            PullAndBear.SHOP_NAME => await _pullAndBearClient.GetItemInfoAsync(item.Url),
+                            Bershka.SHOP_NAME => await _bershkaClient.GetItemInfoAsync(item.Url),
+                            _ => throw new Exception(UNKNOWN_SHOP),
+                        };
                     } catch (Exception ex)
                     {
                         // it's ok; lets update item information next time;
@@ -105,7 +110,7 @@ Current: {newInfo.Price} {newInfo.PriceCurrency}
                 await _botService.SendMessage(
                     message.Chat.Id,
                     message.MessageId,
-                    "Insert a link of item you want to add for tracking after command /add + space.");
+                    $"Insert a link of item you want to add for tracking after command /{Commands.ADD} + space.");
                 return;
             }
 
@@ -119,12 +124,14 @@ Current: {newInfo.Price} {newInfo.PriceCurrency}
             else
             {
                 ItemOnline newInfo;
+                string shopName;
                 try
                 {
-                    var shopName = _shopDefiner.GetShopName(url);
+                    shopName = _shopDefiner.GetShopName(url);
                     newInfo = shopName switch
                     {
                         PullAndBear.SHOP_NAME => await _pullAndBearClient.GetItemInfoAsync(url),
+                        Bershka.SHOP_NAME => await _bershkaClient.GetItemInfoAsync(url),
                         _ => throw new Exception(UNKNOWN_SHOP),
                     };
                 }
@@ -141,7 +148,7 @@ Current: {newInfo.Price} {newInfo.PriceCurrency}
                 var newItem = _mapper.Map<ItemOnline, Item>(newInfo);
                 newItem.Url = url;
                 newItem.StartTrackingDate = DateTime.Now;
-                newItem.Source = PullAndBear.SHOP_NAME;
+                newItem.Source = shopName;
                 newItem.ChatId = message.Chat.Id;
                 newItem.UserId = message.From.Id;
 
