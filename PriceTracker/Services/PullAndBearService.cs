@@ -19,6 +19,7 @@ namespace PriceTracker.Services
         private readonly IPullAndBearClient _pullAndBearClient;
         private readonly IMapper _mapper;
         private readonly IUpdateInfoHelper _updateInfoHelper;
+        private const string urlTemplate = @"(http|ftp|https):\/\/([\w\-_]+(?:(?:\.[\w\-_]+)+))([\w\-\.,@?^=%&amp;:/~\+#]*[\w\-\@?^=%&amp;/~\+#])?";
 
         private Queue<Item> itemsQueue;
         private Timer timer;
@@ -34,7 +35,7 @@ namespace PriceTracker.Services
             List<Item> existedItems = _trackingRepository.GetItemsAsync().Result;
             itemsQueue = existedItems?.Count > 0 ? new Queue<Item>(existedItems) : new Queue<Item>();
 
-            timer = new Timer(5000); // 5 sec
+            timer = new Timer(10000); // 10 sec
             timer.Elapsed += OnTimedEvent;
             timer.AutoReset = true;
             timer.Enabled = true;
@@ -77,7 +78,7 @@ Current: {newInfo.Price} {newInfo.PriceCurrency}
         public async Task AddNewItemAsync(Message message)
         {
             var input = message.Text;
-            var url = Regex.Match(input, @"(http|ftp|https):\/\/([\w\-_]+(?:(?:\.[\w\-_]+)+))([\w\-\.,@?^=%&amp;:/~\+#]*[\w\-\@?^=%&amp;/~\+#])?").Value;
+            var url = Regex.Match(input, urlTemplate).Value;
             if (string.IsNullOrEmpty(url))
             {
                 await _botService.SendMessage(
@@ -87,7 +88,7 @@ Current: {newInfo.Price} {newInfo.PriceCurrency}
                 return;
             }
 
-            if (await _trackingRepository.IsTracked(url, message.From.Id))
+            if (await _trackingRepository.IsTrackedAsync(url, message.From.Id))
             {
                 await _botService.SendMessage(
                     message.Chat.Id,
@@ -161,7 +162,7 @@ Current: {newItem.Price} {newItem.PriceCurrency}
             // remove from db
             try
             {
-                await _trackingRepository.RemoveItem(firstLine);
+                await _trackingRepository.RemoveItemAsync(firstLine);
             } catch (Exception ex)
             {
                 await _botService.SendMessage(

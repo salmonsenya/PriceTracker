@@ -6,11 +6,15 @@ namespace PriceTracker.Repositories
 {
     public interface ITrackingRepository
     {
-        Task<bool> IsWaitingForAdd(int userId);
+        Task<bool> IsWaitingForAddAsync(int userId);
 
-        Task AddUserStatus(int userId);
+        Task AddUserStatusAsync(int userId);
 
-        Task SetWaitingForAdd(int userId, bool newValue);
+        List<UserStatus> GetUserStatuses();
+
+        bool IsUserStatusExists(int userId);
+
+        Task SetWaitingForAddAsync(int userId, bool newValue);
 
         Task<int> AddNewItemAsync(Item item);
 
@@ -18,8 +22,8 @@ namespace PriceTracker.Repositories
 
         Task UpdateInfoOfItemAsync(int id, ItemOnline itemOnline);
 
-        Task<bool> IsTracked(string url, int userId);
+        Task<bool> IsTrackedAsync(string url, int userId);
 
-        Task RemoveItem(string url);
+        Task RemoveItemAsync(string url);
     }
 }

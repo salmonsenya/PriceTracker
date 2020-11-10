@@ -16,6 +16,7 @@ namespace PriceTracker.Services
         private readonly IPullAndBearService _pullAndBearService;
         private readonly IBotService _botService;
         private readonly ITrackingRepository _trackingRepository;
+        private const string urlTemplate = @"(http|ftp|https):\/\/([\w\-_]+(?:(?:\.[\w\-_]+)+))([\w\-\.,@?^=%&amp;:/~\+#]*[\w\-\@?^=%&amp;/~\+#])?";
 
         public UpdateService(IPullAndBearService asosService, IBotService botService, ITrackingRepository trackingRepository)
         {
@@ -59,24 +60,35 @@ namespace PriceTracker.Services
                     var input = message.Text;
 
                     if (input != null) {
-                        if (!await _trackingRepository.IsWaitingForAdd(message.From.Id))
+                        var isWaitingForAdd = false;
+                        var isUserStatusExists = _trackingRepository.IsUserStatusExists(message.From.Id);
+                        if (!isUserStatusExists)
                         {
+                            await _trackingRepository.AddUserStatusAsync(message.From.Id);
+                            isWaitingForAdd = false;
+                        } else
+                        {
+                            isWaitingForAdd = await _trackingRepository.IsWaitingForAddAsync(message.From.Id);
+                        }
+
                             if (input.Equals("add"))
                             {
-                                await _trackingRepository.SetWaitingForAdd(message.From.Id, true);
+                                await _trackingRepository.SetWaitingForAddAsync(message.From.Id, true);
                                 await _botService.SendMessage(
                         message.Chat.Id,
                         message.MessageId,
                         "Insert a link of item you want to add.");
                             }
-                            if (addRegex.IsMatch(input))
+                            else if (addRegex.IsMatch(input))
                             {
-                                await _pullAndBearService.AddNewItemAsync(message);
+                            await _trackingRepository.SetWaitingForAddAsync(message.From.Id, false);
+                            await _pullAndBearService.AddNewItemAsync(message);
                             }
 
-                            if (cartRegex.IsMatch(input) || input.Equals("cart"))
+                            else if (cartRegex.IsMatch(input) || input.Equals("cart"))
                             {
-                                var items = await _pullAndBearService.GetTrackedItemsAsync();
+                            await _trackingRepository.SetWaitingForAddAsync(message.From.Id, false);
+                            var items = await _pullAndBearService.GetTrackedItemsAsync();
                                 if (items?.Count == 0)
                                 {
                                     await _botService.SendMessage(
@@ -98,30 +110,34 @@ Current: {x.Price} {x.PriceCurrency}
                                 }
                             }
 
-                            if (input.Equals("/start"))
+                            else if (input.Equals("/start"))
                             {
-                                await _botService.SendMessageMarkdownV2(
+                            await _trackingRepository.SetWaitingForAddAsync(message.From.Id, false);
+                            await _botService.SendMessageMarkdownV2(
                                             message.Chat.Id,
                                             "Start");
                             }
 
-                            if (input.Equals("/help"))
+                            else if (input.Equals("/help"))
                             {
-                                await _botService.SendMessageMarkdownV2(
+                            await _trackingRepository.SetWaitingForAddAsync(message.From.Id, false);
+                            await _botService.SendMessageMarkdownV2(
                                             message.Chat.Id,
                                             "Help");
                             }
 
-                            if (input.Equals("remove"))
+                            else if (input.Equals("remove"))
                             {
-                                await _botService.SendMessage(
+                            await _trackingRepository.SetWaitingForAddAsync(message.From.Id, false);
+                            await _botService.SendMessage(
                                             message.Chat.Id,
                                             message.MessageId,
                                             "Reply with /remove to message with item you want to remove from cart or use inline button remove after /cart command.");
                             }
-                            if (removeRegex.IsMatch(input))
+                            else if (removeRegex.IsMatch(input))
                             {
-                                var itemMessage = message.ReplyToMessage;
+                            await _trackingRepository.SetWaitingForAddAsync(message.From.Id, false);
+                            var itemMessage = message.ReplyToMessage;
                                 if (itemMessage == null)
                                 {
                                     await _botService.SendMessage(
@@ -147,10 +163,10 @@ Current: {x.Price} {x.PriceCurrency}
                                         "Item was removed from cart."
                                     );
                             }
-                        }
-                        else
+
+                        else if (isWaitingForAdd)
                         {
-                            var url = Regex.Match(input, @"(http|ftp|https):\/\/([\w\-_]+(?:(?:\.[\w\-_]+)+))([\w\-\.,@?^=%&amp;:/~\+#]*[\w\-\@?^=%&amp;/~\+#])?").Value;
+                            var url = Regex.Match(input, urlTemplate).Value;
                             if (string.IsNullOrEmpty(url))
                             {
                                 await _botService.SendMessage(
@@ -161,7 +177,7 @@ Current: {x.Price} {x.PriceCurrency}
                             else
                             {
                                 await _pullAndBearService.AddNewItemAsync(message);
-                                await _trackingRepository.SetWaitingForAdd(message.From.Id, false);
+                                await _trackingRepository.SetWaitingForAddAsync(message.From.Id, false);
                             }
                         }
                     }

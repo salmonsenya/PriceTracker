@@ -18,8 +18,7 @@ namespace PriceTracker.Services
         {
             Keyboard = new List<List<KeyboardButton>>() { new List<KeyboardButton>() { 
                 new KeyboardButton(text: "cart"),
-                new KeyboardButton(text: "add"),
-                new KeyboardButton(text: "remove")} }
+                new KeyboardButton(text: "add")} }
         };
 
         public BotService(IOptions<BotOptions> botOptions)

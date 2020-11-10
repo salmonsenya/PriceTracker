@@ -16,25 +16,32 @@ namespace PriceTracker.Repositories
             _updateInfoHelper = updateInfoHelper ?? throw new ArgumentNullException(nameof(updateInfoHelper));
         }
 
-        public async Task<bool> IsWaitingForAdd(int userId){
+        public bool IsUserStatusExists(int userId)
+        {
+            using var _tarckingContext = new TrackingContext();
+            return _tarckingContext.UserStatuses.Where(x => x.UserId == userId).Count() > 0;
+        }
+
+        public List<UserStatus> GetUserStatuses()
+        {
+            var _trackingContext = new TrackingContext();
+            return _trackingContext.UserStatuses.ToList();
+        }
+
+        public async Task<bool> IsWaitingForAddAsync(int userId){
             using var _trackingContext = new TrackingContext();
             var userStatus = await _trackingContext.UserStatuses.Where(x => x.UserId == userId).FirstOrDefaultAsync();
-            if (userStatus == null)
-            {
-                await AddUserStatus(userId);
-                userStatus = await _trackingContext.UserStatuses.Where(x => x.UserId == userId).FirstOrDefaultAsync();
-            }
             return userStatus.waitingForAdd;
         }
 
-        public async Task AddUserStatus(int userId)
+        public async Task AddUserStatusAsync(int userId)
         {
             using var _trackingContext = new TrackingContext();
             _trackingContext.UserStatuses.Add(new UserStatus { UserId = userId, waitingForAdd = false });
             await _trackingContext.SaveChangesAsync();
         }
 
-        public async Task SetWaitingForAdd(int userId, bool newValue)
+        public async Task SetWaitingForAddAsync(int userId, bool newValue)
         {
             using var _trackingContext = new TrackingContext();
             var userStatus = await _trackingContext.UserStatuses.Where(x => x.UserId == userId).FirstOrDefaultAsync();
@@ -64,14 +71,14 @@ namespace PriceTracker.Repositories
             await _trackingContext.SaveChangesAsync();
         }
 
-        public async Task<bool> IsTracked(string url, int userId)
+        public async Task<bool> IsTrackedAsync(string url, int userId)
         {
             using var _trackingContext = new TrackingContext();
             var items = await _trackingContext.Items.Where(i => i.Url.Equals(url) && i.UserId == userId).ToListAsync();
             return items.Count > 0;
         }
 
-        public async Task RemoveItem(string url)
+        public async Task RemoveItemAsync(string url)
         {
             using var _trackingContext = new TrackingContext();
             var itemToRemove = await _trackingContext.Items.SingleOrDefaultAsync(x => x.Name.Equals(url));
