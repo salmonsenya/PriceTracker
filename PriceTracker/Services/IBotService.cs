@@ -7,6 +7,8 @@ namespace PriceTracker.Services
     {
         TelegramBotClient Client { get; }
 
+        Task SendMessage(long chatId, string text);
+
         Task SendMessage(long chatId, int replyToMessageId, string text);
 
         Task SendMessageMarkdownV2(long chatId, int replyToMessageId, string text);

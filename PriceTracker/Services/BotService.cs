@@ -28,6 +28,18 @@ namespace PriceTracker.Services
             Client = new TelegramBotClient(botToken);
         }
 
+        public async Task SendMessage(long chatId, string text)
+        {
+            try
+            {
+                await Client.SendTextMessageAsync(
+                    chatId: chatId,
+                    text: text,
+                    replyMarkup: keyboard);
+            }
+            catch (Exception ex) { }
+        }
+
         public async Task SendMessage(long chatId, int replyToMessageId, string text)
         {
             try

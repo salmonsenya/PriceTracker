@@ -11,12 +11,22 @@ namespace PriceTracker.Services
     public class UpdateService : IUpdateService
     {
         private readonly Regex addRegex = new Regex(@"^(/add)");
-        private readonly Regex cartRegex = new Regex(@"^(/cart)");
-        private readonly Regex removeRegex = new Regex(@"^(/remove)");
         private readonly IPullAndBearService _pullAndBearService;
         private readonly IBotService _botService;
         private readonly ITrackingRepository _trackingRepository;
         private const string urlTemplate = @"(http|ftp|https):\/\/([\w\-_]+(?:(?:\.[\w\-_]+)+))([\w\-\.,@?^=%&amp;:/~\+#]*[\w\-\@?^=%&amp;/~\+#])?";
+        private const string ADD = "add";
+        private const string CART = "cart";
+        private const string REMOVE = "remove";
+        private const string START = "start";
+        private const string HELP = "help";
+        private const string HELP_TEXT = @"
+/start - send start message
+/help - show help
+/add {link_to_item} - add link to the item you want to track
+add - add link to the item you want to track in the next message to bot
+/cart - see your tracked items
+cart - see your tracked items";
 
         public UpdateService(IPullAndBearService asosService, IBotService botService, ITrackingRepository trackingRepository)
         {
@@ -32,7 +42,7 @@ namespace PriceTracker.Services
                 var message = update.CallbackQuery.Message;
                 var queryData = update.CallbackQuery.Data;
 
-                if (queryData.Equals("remove"))
+                if (queryData.Equals(REMOVE))
                 {
                     try
                     {
@@ -71,26 +81,26 @@ namespace PriceTracker.Services
                             isWaitingForAdd = await _trackingRepository.IsWaitingForAddAsync(message.From.Id);
                         }
 
-                            if (input.Equals("add"))
-                            {
-                                await _trackingRepository.SetWaitingForAddAsync(message.From.Id, true);
-                                await _botService.SendMessage(
-                        message.Chat.Id,
-                        message.MessageId,
-                        "Insert a link of item you want to add.");
-                            }
-                            else if (addRegex.IsMatch(input))
-                            {
+                        if (input.Equals(ADD))
+                        {
+                            await _trackingRepository.SetWaitingForAddAsync(message.From.Id, true);
+                            await _botService.SendMessage(
+                                message.Chat.Id,
+                                message.MessageId,
+                                "Insert a link of item you want to add.");
+                        }
+                        else if (addRegex.IsMatch(input))
+                        {
                             await _trackingRepository.SetWaitingForAddAsync(message.From.Id, false);
                             await _pullAndBearService.AddNewItemAsync(message);
-                            }
+                        }
 
-                            else if (cartRegex.IsMatch(input) || input.Equals("cart"))
-                            {
+                        else if (input.Equals($"/{CART}") || input.Equals(CART))
+                        {
                             await _trackingRepository.SetWaitingForAddAsync(message.From.Id, false);
                             var items = await _pullAndBearService.GetTrackedItemsAsync();
-                                if (items?.Count == 0)
-                                {
+                            if (items?.Count == 0)
+                            {
                                     await _botService.SendMessage(
                                             message.Chat.Id,
                                             message.MessageId,
@@ -110,58 +120,20 @@ Current: {x.Price} {x.PriceCurrency}
                                 }
                             }
 
-                            else if (input.Equals("/start"))
-                            {
-                            await _trackingRepository.SetWaitingForAddAsync(message.From.Id, false);
-                            await _botService.SendMessageMarkdownV2(
-                                            message.Chat.Id,
-                                            "Start");
-                            }
-
-                            else if (input.Equals("/help"))
-                            {
-                            await _trackingRepository.SetWaitingForAddAsync(message.From.Id, false);
-                            await _botService.SendMessageMarkdownV2(
-                                            message.Chat.Id,
-                                            "Help");
-                            }
-
-                            else if (input.Equals("remove"))
+                            else if (input.Equals($"/{START}"))
                             {
                             await _trackingRepository.SetWaitingForAddAsync(message.From.Id, false);
                             await _botService.SendMessage(
                                             message.Chat.Id,
-                                            message.MessageId,
-                                            "Reply with /remove to message with item you want to remove from cart or use inline button remove after /cart command.");
+                                            $"{HELP_TEXT}");
                             }
-                            else if (removeRegex.IsMatch(input))
+
+                            else if (input.Equals($"/{HELP}"))
                             {
                             await _trackingRepository.SetWaitingForAddAsync(message.From.Id, false);
-                            var itemMessage = message.ReplyToMessage;
-                                if (itemMessage == null)
-                                {
-                                    await _botService.SendMessage(
+                            await _botService.SendMessage(
                                             message.Chat.Id,
-                                            message.MessageId,
-                                            "Reply with /remove to message with item you want to remove from cart or use inline button remove after /cart command.");
-                                    return;
-                                }
-                                try
-                                {
-                                    await _pullAndBearService.RemoveItemAsync(itemMessage);
-                                }
-                                catch (Exception e)
-                                {
-                                    await _botService.SendMessageMarkdownV2(
-                                            message.Chat.Id,
-                                            message.MessageId,
-                                            $@"{e.Message}");
-                                }
-                                await _botService.SendMessage(
-                                        message.Chat.Id,
-                                        message.MessageId,
-                                        "Item was removed from cart."
-                                    );
+                                            $"{HELP_TEXT}");
                             }
 
                         else if (isWaitingForAdd)
