@@ -1,6 +1,5 @@
 ﻿using PriceTracker.Repositories;
 using System;
-using System.Collections.Generic;
 using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 using Telegram.Bot.Types;
@@ -17,18 +16,15 @@ namespace PriceTracker.Services
         private readonly ITrackingRepository _trackingRepository;
         private readonly ITextConverter _textConverter;
 
-        private readonly Regex addRegex = new Regex($@"^(/{Commands.ADD})");
-        private readonly Regex addRegexBot = new Regex($@"^(/{Commands.ADD}@{Common.BOT_NAME})");
-
         private readonly string HELP_TEXT = $@"
 PULL&BEAR and Bershka items are only available for tracking at this moment.
 
-/{Commands.START} - send start message
-/{Commands.HELP} - show help
+{Commands.SLASH_START} - send start message
+{Commands.SLASH_HELP} - show help
 {Commands.HELP} - show help
-/{Commands.ADD} link_to_item - add link to the item you want to track
+{Commands.SLASH_ADD} link_to_item - add link to the item you want to track
 {Commands.ADD} - add link to the item you want to track in the next message to bot
-/{Commands.CART} - see your tracked items
+{Commands.SLASH_CART} - see your tracked items
 {Commands.CART} - see your tracked items
 {Commands.CANCEL} - cancel adding of item";
 
@@ -51,61 +47,63 @@ PULL&BEAR and Bershka items are only available for tracking at this moment.
             if (update.CallbackQuery != null)
             {
                 var message = update.CallbackQuery.Message;
-                var queryData = update.CallbackQuery.Data;
+                var input = update.CallbackQuery.Data;
 
-                if (queryData.Equals(Commands.REMOVE))
+                switch (input)
                 {
-                    try
-                    {
-                        await _shopService.RemoveItemAsync(message);
-                        await _botService.SendMessageAsync(
-                            message.Chat.Id,
-                            message.MessageId,
-                            REMOVED);
-                    }
-                    catch (Exception ex)
-                    {
-                        await _botService.SendMessageMarkdownV2Async(
+                    case Commands.REMOVE:
+                        try
+                        {
+                            await _shopService.RemoveItemAsync(message);
+                            await _botService.SendMessageAsync(
                                 message.Chat.Id,
                                 message.MessageId,
-                                $"{REMOVE_EXCEPTION} {ex.Message}");
-                    }
+                                REMOVED);
+                        }
+                        catch (Exception ex)
+                        {
+                            await _botService.SendMessageMarkdownV2Async(
+                                    message.Chat.Id,
+                                    message.MessageId,
+                                    $"{REMOVE_EXCEPTION} {ex.Message}");
+                        }
+                        break;
+                    default:
+                        break;
                 }
-
             }
             if (update.Type == UpdateType.Message)
             {
                 var message = update.Message;
-                if (message.Type == MessageType.Text)
+                if (message.Type != MessageType.Text)
+                    return;
+
+                var input = message.Text;
+                if (input == null)
+                    return;
+
+                try
                 {
-                    var input = message.Text;
+                    var isUserStatusExists = _trackingRepository.IsUserStatusExists(message.From.Id);
+                    var isWaitingForAdd = isUserStatusExists ? await _trackingRepository.IsWaitingForAddAsync(message.From.Id) :
+                         await _trackingRepository.AddUserStatusAsync(message.From.Id);
 
-                    if (input != null) {
-                        try {
-                            var isWaitingForAdd = false;
-                            var isUserStatusExists = _trackingRepository.IsUserStatusExists(message.From.Id);
-                            if (isUserStatusExists)
-                                isWaitingForAdd = await _trackingRepository.IsWaitingForAddAsync(message.From.Id);
-                            else
-                                await _trackingRepository.AddUserStatusAsync(message.From.Id);
-
-                            if (input.Equals(Commands.CANCEL))
-                            {
-                                await _trackingRepository.SetWaitingForAddAsync(message.From.Id, false);
-                                return;
-                            }
-                            else if (input.Equals(Commands.ADD))
-                            {
+                    if (input.StartsWith(Commands.SLASH_ADD) || input.StartsWith(Commands.ADD_BOT))
+                    {
+                        await _trackingRepository.SetWaitingForAddAsync(message.From.Id, false);
+                        await _shopService.AddNewItemAsync(message);
+                    }
+                    else switch (input)
+                        {
+                            case Commands.ADD:
                                 await _trackingRepository.SetWaitingForAddAsync(message.From.Id, true);
                                 throw new Exception(NEED_LINK_EXCEPTION);
-                            }
-                            else if (addRegex.IsMatch(input) || addRegexBot.IsMatch(input))
-                            {
+                            case Commands.CANCEL:
                                 await _trackingRepository.SetWaitingForAddAsync(message.From.Id, false);
-                                await _shopService.AddNewItemAsync(message);
-                            }
-                            else if (new List<string>() { $"/{Commands.CART}", Commands.CART, $"/{Commands.CART}@{Common.BOT_NAME}" }.Contains(input))
-                            {
+                                return;
+                            case Commands.SLASH_CART:
+                            case Commands.CART:
+                            case Commands.CART_BOT:
                                 await _trackingRepository.SetWaitingForAddAsync(message.From.Id, false);
                                 var items = await _shopService.GetTrackedItemsAsync(message.From.Id);
                                 if (items.Count == 0)
@@ -122,42 +120,40 @@ PULL&BEAR and Bershka items are only available for tracking at this moment.
                                         message.Chat.Id,
                                         message.MessageId,
                                         $@"{item}");
-                            }
-                            else if (input.Equals($"/{Commands.START}") || input.Equals($"/{Commands.START}@{Common.BOT_NAME}"))
-                            {
+                                break;
+                            case Commands.SLASH_START:
+                            case Commands.START_BOT:
+                            case Commands.SLASH_HELP:
+                            case Commands.HELP:
+                            case Commands.HELP_BOT:
                                 await _trackingRepository.SetWaitingForAddAsync(message.From.Id, false);
                                 await _botService.SendMessageAsync(
                                                 message.Chat.Id,
                                                 $"{HELP_TEXT}");
-                            }
-                            else if (input.Equals($"/{Commands.HELP}") || input.Equals($"{Commands.HELP}") || input.Equals($"/{Commands.HELP}@{Common.BOT_NAME}"))
-                            {
-                                await _trackingRepository.SetWaitingForAddAsync(message.From.Id, false);
-                                await _botService.SendMessageAsync(
-                                                message.Chat.Id,
-                                                $"{HELP_TEXT}");
-                            }
-                            else if (isWaitingForAdd)
-                            {
-                                var url = Regex.Match(input, Common.UrlTemplate).Value;
-                                if (string.IsNullOrEmpty(url))
-                                    throw new Exception(NEED_CORRECT_LINK_EXCEPTION);
+                                break;
+                            default:
+                                if (isWaitingForAdd)
+                                {
+                                    var url = Regex.Match(input, Common.UrlTemplate).Value;
+                                    if (string.IsNullOrEmpty(url))
+                                        throw new Exception(NEED_CORRECT_LINK_EXCEPTION);
 
-                                await _trackingRepository.SetWaitingForAddAsync(message.From.Id, false);
-                                var newItem = await _shopService.AddNewItemAsync(message);
-                                await _botService.SendMessageButtonMarkdownV2Async(
-                                    message.Chat.Id,
-                                    message.MessageId,
-                                    _textConverter.ToString(newItem));
-                            }
-                        } catch (Exception ex)
-                        {
-                            await _botService.SendMessageAsync(
+                                    await _trackingRepository.SetWaitingForAddAsync(message.From.Id, false);
+                                    var newItem = await _shopService.AddNewItemAsync(message);
+                                    await _botService.SendMessageButtonMarkdownV2Async(
                                         message.Chat.Id,
                                         message.MessageId,
-                                        ex.Message);
+                                        _textConverter.ToString(newItem));
+                                }
+                                break;
                         }
-                    }
+                }
+                catch (Exception ex)
+                {
+                    await _botService.SendMessageAsync(
+                                message.Chat.Id,
+                                message.MessageId,
+                                ex.Message);
                 }
             }
         }

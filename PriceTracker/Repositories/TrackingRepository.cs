@@ -44,11 +44,12 @@ namespace PriceTracker.Repositories
             return userStatus.waitingForAdd;
         }
 
-        public async Task AddUserStatusAsync(int userId)
+        public async Task<bool> AddUserStatusAsync(int userId)
         {
             using var _trackingContext = new TrackingContext();
             _trackingContext.UserStatuses.Add(new UserStatus { UserId = userId, waitingForAdd = false });
             await _trackingContext.SaveChangesAsync();
+            return false;
         }
 
         public async Task SetWaitingForAddAsync(int userId, bool newValue)

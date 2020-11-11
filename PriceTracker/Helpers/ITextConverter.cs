@@ -8,5 +8,7 @@ namespace PriceTracker.Helpers
         List<string> ToStrings(List<Item> items);
 
         string ToString(Item item);
+
+        string ToString(Item item, ItemOnline newInfo);
     }
 }

@@ -25,6 +25,7 @@ namespace PriceTracker
             services.AddSingleton<IBotService, BotService>();
             services.AddScoped<ITrackingRepository, TrackingRepository>();
             services.AddScoped<IShopService, ShopService>();
+            services.AddScoped<ITimerService, TimerService>();
             services.AddScoped<IUpdateService, UpdateService>();
         }
     }

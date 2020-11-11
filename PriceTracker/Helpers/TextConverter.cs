@@ -21,5 +21,14 @@ Current: {x.Price} {x.PriceCurrency}
 *{item.Name}*
 Current: {item.Price} {item.PriceCurrency}
 [View on site]({item.Url})";
+
+        public string ToString(Item item, ItemOnline newInfo) =>
+            $@"
+Item price has been changed.
+*{item.Name}*
+Previous: {item.Price} {item.PriceCurrency}
+Current: {newInfo.Price} {newInfo.PriceCurrency}
+[View on site]({item.Url})
+";
     }
 }
