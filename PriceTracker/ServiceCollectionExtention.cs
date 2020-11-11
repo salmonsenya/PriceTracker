@@ -20,6 +20,7 @@ namespace PriceTracker
             services.AddSingleton<IPullAndBearParser, PullAndBearParser>();
             services.AddSingleton<IBershkaParser, BershkaParser>();
             services.AddSingleton<IUpdateInfoHelper, UpdateInfoHelper>();
+            services.AddSingleton<ITextConverter, TextConverter>();
             services.AddSingleton<IShopDefiner, ShopDefiner>();
             services.AddSingleton<IBotService, BotService>();
             services.AddScoped<ITrackingRepository, TrackingRepository>();

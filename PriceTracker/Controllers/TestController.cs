@@ -30,15 +30,15 @@ namespace PriceTracker.Controllers
         [Route("items")]
         public async Task<IActionResult> Items()
         {
-            var items = await _pullAndBearService.GetTrackedItemsAsync();
+            var items = await _trackingRepository.GetItemsAsync();
             return Ok(JsonConvert.SerializeObject(items, Formatting.Indented));
         }
 
         [HttpGet]
         [Route("statuses")]
-        public IActionResult Statuses()
+        public async Task<IActionResult> Statuses()
         {
-            var statuses = _trackingRepository.GetUserStatuses();
+            var statuses = await _trackingRepository.GetUserStatusesAsync();
             return Ok(JsonConvert.SerializeObject(statuses, Formatting.Indented));
         }
 
@@ -48,7 +48,8 @@ namespace PriceTracker.Controllers
         public async Task<IActionResult> SetWaitingForAdd(int userId, bool value)
         {
             await _trackingRepository.SetWaitingForAddAsync(userId, value);
-            var status = _trackingRepository.GetUserStatuses().Find(x => x.UserId == userId);
+            var statuses = await _trackingRepository.GetUserStatusesAsync();
+            var status = statuses.Find(x => x.UserId == userId);
             return Ok(JsonConvert.SerializeObject(status, Formatting.Indented));
         }
     }

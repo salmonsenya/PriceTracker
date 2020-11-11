@@ -11,6 +11,14 @@ namespace PriceTracker.Repositories
     public class TrackingRepository : ITrackingRepository
     {
         private readonly IUpdateInfoHelper _updateInfoHelper;
+
+        private const string REMOVE_EXCEPTION = "Item could not be removed.";
+        private const string NOT_FOUND_IN_DB = "Item to remove was not found in DB.";
+        private const string REMOVE_FROM_DB_EXCEPTION = "Failed to remove item from DB.";
+        private const string USER_NOT_FOUND_EXCEPTION = "Failed to find user in DB";
+        private const string ITEM_NOT_FOUND_EXCEPTION = "Failed to find item in DB";
+        private const string STATUS_NOT_FOUND_EXCEPTION = "Status for user not defined.";
+
         public TrackingRepository(IUpdateInfoHelper updateInfoHelper)
         {
             _updateInfoHelper = updateInfoHelper ?? throw new ArgumentNullException(nameof(updateInfoHelper));
@@ -18,19 +26,21 @@ namespace PriceTracker.Repositories
 
         public bool IsUserStatusExists(int userId)
         {
-            using var _tarckingContext = new TrackingContext();
-            return _tarckingContext.UserStatuses.Where(x => x.UserId == userId).Count() > 0;
+            using var _trackingContext = new TrackingContext();
+            return _trackingContext.UserStatuses.Where(x => x.UserId == userId).Count() > 0;
         }
 
-        public List<UserStatus> GetUserStatuses()
+        public async Task<List<UserStatus>> GetUserStatusesAsync()
         {
-            var _trackingContext = new TrackingContext();
-            return _trackingContext.UserStatuses.ToList();
+            using var _trackingContext = new TrackingContext();
+            return await _trackingContext.UserStatuses.ToListAsync();
         }
 
         public async Task<bool> IsWaitingForAddAsync(int userId){
             using var _trackingContext = new TrackingContext();
             var userStatus = await _trackingContext.UserStatuses.Where(x => x.UserId == userId).FirstOrDefaultAsync();
+            if (userStatus == null)
+                throw new Exception($"{USER_NOT_FOUND_EXCEPTION}");
             return userStatus.waitingForAdd;
         }
 
@@ -45,6 +55,8 @@ namespace PriceTracker.Repositories
         {
             using var _trackingContext = new TrackingContext();
             var userStatus = await _trackingContext.UserStatuses.Where(x => x.UserId == userId).FirstOrDefaultAsync();
+            if (userStatus == null)
+                throw new Exception($"{USER_NOT_FOUND_EXCEPTION}");
             userStatus.waitingForAdd = newValue;
             await _trackingContext.SaveChangesAsync();
         }
@@ -67,6 +79,8 @@ namespace PriceTracker.Repositories
         {
             using var _trackingContext = new TrackingContext();
             var item = await _trackingContext.Items.Where(i => i.ItemId == id).FirstOrDefaultAsync();
+            if (item == null)
+                throw new Exception($"{ITEM_NOT_FOUND_EXCEPTION}");
             item = _updateInfoHelper.GetUpdatedItem(item, itemOnline);
             await _trackingContext.SaveChangesAsync();
         }
@@ -81,18 +95,16 @@ namespace PriceTracker.Repositories
         public async Task RemoveItemAsync(string url)
         {
             using var _trackingContext = new TrackingContext();
-            var itemToRemove = await _trackingContext.Items.SingleOrDefaultAsync(x => x.Name.Equals(url));
+            var itemToRemove = await _trackingContext.Items.Where(x => x.Name.Equals(url))?.FirstAsync();
             if (itemToRemove == null)
-            {
-                throw new System.Exception(message: "Item to remove could not be found in DB.");
-            }
+                throw new Exception($"{REMOVE_EXCEPTION} {NOT_FOUND_IN_DB}");
 
             try
             {
                 _trackingContext.Items.Remove(itemToRemove);
             } catch (Exception ex)
             {
-                throw new System.Exception(message: "Item to remove could not be removed from DB.");
+                throw new Exception($"{REMOVE_EXCEPTION} {REMOVE_FROM_DB_EXCEPTION} {ex.Message}");
             }
             await _trackingContext.SaveChangesAsync();
         }

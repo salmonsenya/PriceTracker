@@ -7,9 +7,9 @@ namespace PriceTracker.Services
 {
     public interface IShopService
     {
-        Task AddNewItemAsync(Message message);
+        Task<Item> AddNewItemAsync(Message message);
 
-        Task<List<Item>> GetTrackedItemsAsync();
+        Task<List<Item>> GetTrackedItemsAsync(int userId);
 
         Task RemoveItemAsync(Message itemMessage);
     }

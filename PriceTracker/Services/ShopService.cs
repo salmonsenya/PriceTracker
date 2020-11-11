@@ -10,6 +10,7 @@ using System.Threading.Tasks;
 using System.Timers;
 using Telegram.Bot.Types;
 using PriceTracker.Consts;
+using System.Linq;
 
 namespace PriceTracker.Services
 {
@@ -26,7 +27,11 @@ namespace PriceTracker.Services
         private Queue<Item> itemsQueue;
         private Timer timer;
 
-        private const string UNKNOWN_SHOP = "Unknown shop.";
+        private const string UNKNOWN_SHOP_EXCEPTION = "Item could not be added for tracking. Unknown shop.";
+        private readonly string NEED_INLINE_LINK_EXCEPTION = $"Insert a link of item you want to add for tracking after command /{Commands.ADD} + space.";
+        private const string ALREADY_TRACKED_EXCEPTION = "Item is already added for tracking.";
+        private const string PARSE_NAME_EXCEPTION = "Failed to parse name of item to delete.";
+        private const string REMOVE_FROM_QUEUE_EXCEPTION = "Item could not be removed from queue.";
 
         public ShopService(
             IBotService botService,
@@ -54,8 +59,12 @@ namespace PriceTracker.Services
             timer.Enabled = true;
         }
 
-        public async Task<List<Item>> GetTrackedItemsAsync() =>
-            await _trackingRepository.GetItemsAsync();
+        public async Task<List<Item>> GetTrackedItemsAsync(int userId)
+        {
+            var items = await _trackingRepository.GetItemsAsync();
+            var userItems = items.Where(x => x.UserId == userId).ToList();
+            return userItems;
+        }
 
         private async void OnTimedEvent(Object source, ElapsedEventArgs e)
         {
@@ -72,7 +81,7 @@ namespace PriceTracker.Services
                         {
                             PullAndBear.SHOP_NAME => await _pullAndBearClient.GetItemInfoAsync(item.Url),
                             Bershka.SHOP_NAME => await _bershkaClient.GetItemInfoAsync(item.Url),
-                            _ => throw new Exception(UNKNOWN_SHOP),
+                            _ => throw new Exception(UNKNOWN_SHOP_EXCEPTION),
                         };
                     } catch (Exception ex)
                     {
@@ -83,7 +92,7 @@ namespace PriceTracker.Services
                         await _trackingRepository.UpdateInfoOfItemAsync(item.ItemId, newInfo);
                         if (item.Status != newInfo.Status || item.Price != newInfo.Price)
                         {
-                            await _botService.SendMessageMarkdownV2(
+                            await _botService.SendMessageMarkdownV2Async(
                                 item.ChatId,
                                 $@"
 Item price has been changed.
@@ -101,71 +110,34 @@ Current: {newInfo.Price} {newInfo.PriceCurrency}
             }
         }
 
-        public async Task AddNewItemAsync(Message message)
+        public async Task<Item> AddNewItemAsync(Message message)
         {
-            var input = message.Text;
-            var url = Regex.Match(input, Common.UrlTemplate).Value;
+            var url = Regex.Match(message.Text, Common.UrlTemplate).Value;
             if (string.IsNullOrEmpty(url))
-            {
-                await _botService.SendMessage(
-                    message.Chat.Id,
-                    message.MessageId,
-                    $"Insert a link of item you want to add for tracking after command /{Commands.ADD} + space.");
-                return;
-            }
+                throw new Exception(NEED_INLINE_LINK_EXCEPTION);
 
             if (await _trackingRepository.IsTrackedAsync(url, message.From.Id))
+                throw new Exception(ALREADY_TRACKED_EXCEPTION);
+
+            var shopName = _shopDefiner.GetShopName(url);
+            var newInfo = shopName switch
             {
-                await _botService.SendMessage(
-                    message.Chat.Id,
-                    message.MessageId,
-                    "Item is already added for tracking.");
-            }
-            else
-            {
-                ItemOnline newInfo;
-                string shopName;
-                try
-                {
-                    shopName = _shopDefiner.GetShopName(url);
-                    newInfo = shopName switch
-                    {
-                        PullAndBear.SHOP_NAME => await _pullAndBearClient.GetItemInfoAsync(url),
-                        Bershka.SHOP_NAME => await _bershkaClient.GetItemInfoAsync(url),
-                        _ => throw new Exception(UNKNOWN_SHOP),
-                    };
-                }
-                catch (Exception ex)
-                {
-                    // it's not ok; we can't add this item;
-                    await _botService.SendMessage(
-                        message.Chat.Id,
-                        message.MessageId,
-                        $"Item could not be added for tracking. Some problems occured. {ex.Message}");
-                    return;
-                }
+                PullAndBear.SHOP_NAME => await _pullAndBearClient.GetItemInfoAsync(url),
+                Bershka.SHOP_NAME => await _bershkaClient.GetItemInfoAsync(url),
+                _ => throw new Exception(UNKNOWN_SHOP_EXCEPTION),
+            };
 
-                var newItem = _mapper.Map<ItemOnline, Item>(newInfo);
-                newItem.Url = url;
-                newItem.StartTrackingDate = DateTime.Now;
-                newItem.Source = shopName;
-                newItem.ChatId = message.Chat.Id;
-                newItem.UserId = message.From.Id;
+            var newItem = _mapper.Map<ItemOnline, Item>(newInfo);
+            newItem.Url = url;
+            newItem.StartTrackingDate = DateTime.Now;
+            newItem.Source = shopName;
+            newItem.ChatId = message.Chat.Id;
+            newItem.UserId = message.From.Id;
 
-
-
-                var itemId = await _trackingRepository.AddNewItemAsync(newItem);
-                newItem.ItemId = itemId;
-                itemsQueue.Enqueue(newItem);
-                await _botService.SendMessageButtonMarkdownV2(
-                    message.Chat.Id,
-                    message.MessageId,
-                    $@"
-*{newItem.Name}*
-Current: {newItem.Price} {newItem.PriceCurrency}
-[View on site]({newItem.Url})
-");
-            }
+            var itemId = await _trackingRepository.AddNewItemAsync(newItem);
+            newItem.ItemId = itemId;
+            itemsQueue.Enqueue(newItem);
+            return newItem;
         }
 
         public async Task RemoveItemAsync(Message itemMessage)
@@ -174,14 +146,8 @@ Current: {newItem.Price} {newItem.PriceCurrency}
             var firstLine = itemText.Substring(0, itemText.IndexOf(Environment.NewLine));
 
             if (string.IsNullOrEmpty(firstLine))
-            {
-                await _botService.SendMessage(
-                    itemMessage.Chat.Id,
-                    itemMessage.MessageId,
-                    "Name of item u want to delete wasn't found.");
-                return;
-            }
-            // remove from queue
+                throw new Exception(PARSE_NAME_EXCEPTION);
+
             var removedFromQueue = false;
             for (int i = 0; i < itemsQueue.Count; i++)
             {
@@ -194,33 +160,9 @@ Current: {newItem.Price} {newItem.PriceCurrency}
                 itemsQueue.Enqueue(item);
             }
             if (!removedFromQueue)
-            {
-                await _botService.SendMessage(
-                    itemMessage.Chat.Id,
-                    itemMessage.MessageId,
-                    "Item could not be removed from queue.");
-                return;
-            }
-            await _botService.SendMessage(
-                itemMessage.Chat.Id,
-                itemMessage.MessageId,
-                "Item was removed from queue.");
+                throw new Exception(REMOVE_FROM_QUEUE_EXCEPTION);
 
-            // remove from db
-            try
-            {
-                await _trackingRepository.RemoveItemAsync(firstLine);
-            } catch (Exception ex)
-            {
-                await _botService.SendMessage(
-                    itemMessage.Chat.Id,
-                    itemMessage.MessageId,
-                    $@"{ex.Message}");
-            }
-            await _botService.SendMessage(
-                itemMessage.Chat.Id,
-                itemMessage.MessageId,
-                "Item was removed from DB.");
+            await _trackingRepository.RemoveItemAsync(firstLine);
         }
     }
 }

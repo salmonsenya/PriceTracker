@@ -31,7 +31,7 @@ namespace PriceTracker.Services
             Client = new TelegramBotClient(botToken);
         }
 
-        public async Task SendMessage(long chatId, string text)
+        public async Task SendMessageAsync(long chatId, string text)
         {
             try
             {
@@ -43,7 +43,7 @@ namespace PriceTracker.Services
             catch (Exception ex) { }
         }
 
-        public async Task SendMessage(long chatId, int replyToMessageId, string text)
+        public async Task SendMessageAsync(long chatId, int replyToMessageId, string text)
         {
             try
             {
@@ -56,7 +56,7 @@ namespace PriceTracker.Services
             catch (Exception ex) { }
         }
 
-        public async Task SendMessageMarkdownV2(long chatId, int replyToMessageId, string text)
+        public async Task SendMessageMarkdownV2Async(long chatId, int replyToMessageId, string text)
         {
             try
             {
@@ -71,7 +71,7 @@ namespace PriceTracker.Services
             catch (Exception ex) { }
         }
 
-        public async Task SendMessageMarkdownV2(long chatId, string text)
+        public async Task SendMessageMarkdownV2Async(long chatId, string text)
         {
             try
             {
@@ -85,7 +85,7 @@ namespace PriceTracker.Services
             catch (Exception ex) { }
         }
 
-        public async Task SendMessageButtonMarkdownV2(long chatId, int replyToMessageId, string text)
+        public async Task SendMessageButtonMarkdownV2Async(long chatId, int replyToMessageId, string text)
         {
             var inlineKeyboardButton = new InlineKeyboardButton
             {
