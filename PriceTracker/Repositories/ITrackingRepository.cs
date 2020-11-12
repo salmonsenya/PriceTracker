@@ -20,7 +20,7 @@ namespace PriceTracker.Repositories
 
         Task<List<Item>> GetItemsAsync();
 
-        Task UpdateInfoOfItemAsync(int id, ItemOnline itemOnline);
+        Task UpdateInfoOfItemAsync(Item itemUpdated);
 
         Task<bool> IsTrackedAsync(string url, int userId);
 

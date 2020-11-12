@@ -27,9 +27,7 @@ namespace PriceTracker.Clients
             using (var httpResponseMessage = await _httpClient.GetAsync(new Uri(url)))
             {
                 if (!httpResponseMessage.IsSuccessStatusCode)
-                {
                     throw new Exception($"{HTTP_EXCEPTION} ({httpResponseMessage.StatusCode}).");
-                }
                 var responseString = await httpResponseMessage.Content.ReadAsStringAsync();
                 var itemInfo = _parserHelper.GetItemInfo(responseString);
                 return itemInfo;

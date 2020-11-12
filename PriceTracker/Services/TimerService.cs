@@ -82,12 +82,13 @@ namespace PriceTracker.Services
                     Bershka.SHOP_NAME => await _bershkaClient.GetItemInfoAsync(item.Url),
                     _ => throw new Exception(UNKNOWN_SHOP_EXCEPTION),
                 };
-                await _trackingRepository.UpdateInfoOfItemAsync(item.ItemId, newInfo);
                 if (item.Status != newInfo.Status || item.Price != newInfo.Price)
                     await _botService.SendMessageMarkdownV2Async(
                         item.ChatId,
                         _textConverter.ToString(item, newInfo));
                 item = _updateInfoHelper.GetUpdatedItem(item, newInfo);
+                await _trackingRepository.UpdateInfoOfItemAsync(item);
+                
             }
             catch (Exception ex)
             {

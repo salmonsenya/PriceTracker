@@ -1,4 +1,5 @@
 ﻿using PriceTracker.Models;
+using System;
 
 namespace PriceTracker.Helpers
 {
@@ -12,6 +13,7 @@ namespace PriceTracker.Helpers
             updatedItem.PriceCurrency = newInfo.PriceCurrency;
             updatedItem.Name = newInfo.Name;
             updatedItem.Image = newInfo.Image;
+            updatedItem.LastUpdateDate = DateTime.Now;
             return updatedItem;
         }
     }

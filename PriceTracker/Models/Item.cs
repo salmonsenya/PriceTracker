@@ -25,5 +25,7 @@ namespace PriceTracker.Models
         public long ChatId { get; set; }
 
         public int UserId { get; set; }
+
+        public DateTime LastUpdateDate { get; set; }
     }
 }

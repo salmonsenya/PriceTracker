@@ -71,6 +71,7 @@ namespace PriceTracker.Services
             var newItem = _mapper.Map<ItemOnline, Item>(newInfo);
             newItem.Url = url;
             newItem.StartTrackingDate = DateTime.Now;
+            newItem.LastUpdateDate = newItem.StartTrackingDate;
             newItem.Source = shopName;
             newItem.ChatId = message.Chat.Id;
             newItem.UserId = message.From.Id;
