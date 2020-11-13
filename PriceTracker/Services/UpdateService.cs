@@ -84,7 +84,7 @@ PULL&BEAR and Bershka items are only available for tracking at this moment.
 
                 try
                 {
-                    var isUserStatusExists = _trackingRepository.IsUserStatusExists(message.From.Id);
+                    var isUserStatusExists = await _trackingRepository.IsUserStatusExistsAsync(message.From.Id);
                     var isWaitingForAdd = isUserStatusExists ? await _trackingRepository.IsWaitingForAddAsync(message.From.Id) :
                          await _trackingRepository.AddUserStatusAsync(message.From.Id);
 

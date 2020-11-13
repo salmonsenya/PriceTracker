@@ -12,7 +12,7 @@ namespace PriceTracker.Repositories
 
         Task<List<UserStatus>> GetUserStatusesAsync();
 
-        bool IsUserStatusExists(int userId);
+        Task<bool> IsUserStatusExistsAsync(int userId);
 
         Task SetWaitingForAddAsync(int userId, bool newValue);
 
