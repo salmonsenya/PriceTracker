@@ -1,6 +1,15 @@
 # PriceTracker Telegram Bot
 ### About
 Telegram бот на C#, ASP.NET Core 3.1, с использованием клиента для *Telegram Bot API* [Telegram.Bot](https://github.com/TelegramBots/Telegram.Bot). Хостится на сервере Ubuntu 20.04 + Nginx. Получает *update*'ы через *Webhook*.
+
+*PriceTrackerBot* умеет добавлять товары по ссылке в корзину, присылать уведомления об изменении их цены, показывать содержимое корзины и удалять товары.
+
+В данный момент есть возможность добавлять товары из *PULL&BEAR* и *Bershka*.
+
+*Name*: *PriceTrackerBot*
+
+*Username*: *@sales_tracker_bot*
+
 * * *
 ### Setup
 + Мой [гайд](https://salmonsenya.github.io/DiscourteousBotWebhook/) о том, как написать Telegram бот на ASP.Net Core и раскатить его на Linux сервере
