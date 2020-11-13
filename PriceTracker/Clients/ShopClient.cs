@@ -1,4 +1,5 @@
 ﻿using Microsoft.Extensions.Options;
+using PriceTracker.Consts;
 using PriceTracker.Helpers;
 using PriceTracker.Models;
 using System;
@@ -11,7 +12,7 @@ namespace PriceTracker.Clients
     {
         private HttpClient _httpClient;
         private readonly IShopParser _parserHelper;
-        private const string HTTP_EXCEPTION = "The HTTP status code of the response was not expected";
+        
 
         public ShopClient(HttpClient httpClient, IOptions<PullAndBearApiOptions> options, IShopParser parserHelper)
         {
@@ -27,7 +28,7 @@ namespace PriceTracker.Clients
             using (var httpResponseMessage = await _httpClient.GetAsync(new Uri(url)))
             {
                 if (!httpResponseMessage.IsSuccessStatusCode)
-                    throw new Exception($"{HTTP_EXCEPTION} ({httpResponseMessage.StatusCode}).");
+                    throw new Exception($"{Exceptions.HTTP_EXCEPTION} ({httpResponseMessage.StatusCode}).");
                 var responseString = await httpResponseMessage.Content.ReadAsStringAsync();
                 var itemInfo = _parserHelper.GetItemInfo(responseString);
                 return itemInfo;

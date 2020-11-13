@@ -6,14 +6,13 @@ using PriceTracker.Repositories;
 using PriceTracker.Consts;
 using PriceTracker.Clients;
 using PriceTracker.Helpers;
+using System.Linq;
 
 namespace PriceTracker.Services
 {
     public class TimerService : ITimerService
     {
         private readonly static int maxUpdateTimeIntervalHours = 24;
-        private const string UNKNOWN_SHOP_EXCEPTION = "Item could not be added for tracking. Unknown shop.";
-        private const string REMOVE_FROM_QUEUE_EXCEPTION = "Item could not be removed from queue.";
         private readonly string CANT_UPDATE_EXCEPTION = $"Item info was not updated for {maxUpdateTimeIntervalHours} hours.";
 
         private Queue<Item> itemsQueue;
@@ -41,8 +40,8 @@ namespace PriceTracker.Services
             _textConverter = textConverter ?? throw new ArgumentNullException(nameof(textConverter));
             _updateInfoHelper = updateInfoHelper ?? throw new ArgumentNullException(nameof(updateInfoHelper));
 
-            List<Item> existedItems = _trackingRepository.GetItemsAsync().Result;
-            itemsQueue = existedItems?.Count > 0 ? new Queue<Item>(existedItems) : new Queue<Item>();
+            var existedItems = _trackingRepository.GetItemsAsync().Result;
+            itemsQueue = existedItems.Any() ? new Queue<Item>(existedItems) : new Queue<Item>();
 
             timer = new Timer(10000); // 10 sec
             timer.Elapsed += OnTimedEvent;
@@ -67,12 +66,12 @@ namespace PriceTracker.Services
                 itemsQueue.Enqueue(item);
             }
             if (!removedFromQueue)
-                throw new Exception(REMOVE_FROM_QUEUE_EXCEPTION);
+                throw new Exception(Exceptions.REMOVE_FROM_QUEUE_EXCEPTION);
         }
 
         private async void OnTimedEvent(Object source, ElapsedEventArgs e)
         {
-            if (itemsQueue.Count == 0)
+            if (!itemsQueue.Any())
                 return;
 
             var item = itemsQueue.Dequeue();
@@ -82,7 +81,7 @@ namespace PriceTracker.Services
                 {
                     PullAndBear.SHOP_NAME => await _pullAndBearClient.GetItemInfoAsync(item.Url),
                     Bershka.SHOP_NAME => await _bershkaClient.GetItemInfoAsync(item.Url),
-                    _ => throw new Exception(UNKNOWN_SHOP_EXCEPTION),
+                    _ => throw new Exception(Exceptions.UNKNOWN_SHOP_EXCEPTION),
                 };
                 if (item.Status != newInfo.Status || item.Price != newInfo.Price)
                     await _botService.SendMessageMarkdownV2Async(

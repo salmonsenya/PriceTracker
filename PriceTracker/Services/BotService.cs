@@ -21,7 +21,9 @@ namespace PriceTracker.Services
                 new KeyboardButton(text: $"{Commands.CART}"),
                 new KeyboardButton(text: $"{Commands.ADD}"),
                 new KeyboardButton(text: $"{Commands.HELP}"),
-                new KeyboardButton(text: $"{Commands.CANCEL}")} }
+                new KeyboardButton(text: $"{Commands.CANCEL}")} },
+            ResizeKeyboard = true,
+            OneTimeKeyboard = true
         };
 
         public BotService(IOptions<BotOptions> botOptions)
@@ -98,6 +100,26 @@ namespace PriceTracker.Services
                 await Client.SendTextMessageAsync(
                     chatId: chatId,
                     replyToMessageId: replyToMessageId,
+                    parseMode: ParseMode.MarkdownV2,
+                    disableWebPagePreview: false,
+                    replyMarkup: keyboard,
+                    text: text);
+            }
+            catch (Exception ex) { }
+        }
+
+        public async Task SendMessageButtonMarkdownV2Async(long chatId, string text)
+        {
+            var inlineKeyboardButton = new InlineKeyboardButton
+            {
+                Text = $"{Commands.REMOVE}",
+                CallbackData = $"{Commands.REMOVE}"
+            };
+            var keyboard = new InlineKeyboardMarkup(inlineKeyboardButton);
+            try
+            {
+                await Client.SendTextMessageAsync(
+                    chatId: chatId,
                     parseMode: ParseMode.MarkdownV2,
                     disableWebPagePreview: false,
                     replyMarkup: keyboard,

@@ -6,6 +6,7 @@ using Telegram.Bot.Types;
 using Telegram.Bot.Types.Enums;
 using PriceTracker.Consts;
 using PriceTracker.Helpers;
+using System.Linq;
 
 namespace PriceTracker.Services
 {
@@ -27,12 +28,6 @@ PULL&BEAR and Bershka items are only available for tracking at this moment.
 {Commands.SLASH_CART} - see your tracked items
 {Commands.CART} - see your tracked items
 {Commands.CANCEL} - cancel adding of item";
-
-        private const string EMPTY_CART = "Your cart is empty.";
-        private const string NEED_CORRECT_LINK_EXCEPTION = "Insert a correct link.";
-        private const string NEED_LINK_EXCEPTION = "Insert a link of item you want to add.";
-        private const string REMOVE_EXCEPTION = "Item could not be removed from cart.";
-        private const string REMOVED = "Item was removed from cart.";
 
         public UpdateService(IShopService shopService, IBotService botService, ITrackingRepository trackingRepository, ITextConverter textConverter)
         {
@@ -58,14 +53,14 @@ PULL&BEAR and Bershka items are only available for tracking at this moment.
                             await _botService.SendMessageAsync(
                                 message.Chat.Id,
                                 message.MessageId,
-                                REMOVED);
+                                Exceptions.REMOVED);
                         }
                         catch (Exception ex)
                         {
                             await _botService.SendMessageMarkdownV2Async(
                                     message.Chat.Id,
                                     message.MessageId,
-                                    $"{REMOVE_EXCEPTION} {ex.Message}");
+                                    ex.Message);
                         }
                         break;
                     default:
@@ -97,7 +92,7 @@ PULL&BEAR and Bershka items are only available for tracking at this moment.
                         {
                             case Commands.ADD:
                                 await _trackingRepository.SetWaitingForAddAsync(message.From.Id, true);
-                                throw new Exception(NEED_LINK_EXCEPTION);
+                                throw new Exception(Exceptions.NEED_LINK_EXCEPTION);
                             case Commands.CANCEL:
                                 await _trackingRepository.SetWaitingForAddAsync(message.From.Id, false);
                                 return;
@@ -106,20 +101,31 @@ PULL&BEAR and Bershka items are only available for tracking at this moment.
                             case Commands.CART_BOT:
                                 await _trackingRepository.SetWaitingForAddAsync(message.From.Id, false);
                                 var items = await _shopService.GetTrackedItemsAsync(message.From.Id);
-                                if (items.Count == 0)
-                                {
-                                    await _botService.SendMessageAsync(
-                                        message.Chat.Id,
-                                        message.MessageId,
-                                        EMPTY_CART);
+                                if (!items.Any()) {
+                                    if (message.From.Username != null)
+                                        await _botService.SendMessageMarkdownV2Async(
+                                            message.Chat.Id,
+                                             $@"[@{message.From.Username}](tg://user?id={message.From.Id}) {Exceptions.EMPTY_CART}");
+                                    else
+                                        await _botService.SendMessageAsync(
+                                            message.Chat.Id,
+                                            message.MessageId,
+                                            Exceptions.EMPTY_CART);
                                     return;
                                 }
                                 var textItems = _textConverter.ToStrings(items);
-                                foreach (var item in textItems)
-                                    await _botService.SendMessageButtonMarkdownV2Async(
-                                        message.Chat.Id,
-                                        message.MessageId,
-                                        $@"{item}");
+                                foreach (var item in textItems) {
+                                    if (message.From.Username != null)
+                                        await _botService.SendMessageButtonMarkdownV2Async(
+                                            message.Chat.Id,
+                                            $@"{item}
+[@{message.From.Username}](tg://user?id={message.From.Id})");
+                                    else
+                                        await _botService.SendMessageButtonMarkdownV2Async(
+                                            message.Chat.Id,
+                                            message.MessageId,
+                                            item);
+                                }
                                 break;
                             case Commands.SLASH_START:
                             case Commands.START_BOT:
@@ -136,7 +142,7 @@ PULL&BEAR and Bershka items are only available for tracking at this moment.
                                 {
                                     var url = Regex.Match(input, Common.UrlTemplate).Value;
                                     if (string.IsNullOrEmpty(url))
-                                        throw new Exception(NEED_CORRECT_LINK_EXCEPTION);
+                                        throw new Exception(Exceptions.NEED_CORRECT_LINK_EXCEPTION);
 
                                     await _trackingRepository.SetWaitingForAddAsync(message.From.Id, false);
                                     var newItem = await _shopService.AddNewItemAsync(message);

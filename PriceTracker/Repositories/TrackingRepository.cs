@@ -1,4 +1,5 @@
 ﻿using Microsoft.EntityFrameworkCore;
+using PriceTracker.Consts;
 using PriceTracker.Helpers;
 using PriceTracker.Models;
 using System;
@@ -10,12 +11,6 @@ namespace PriceTracker.Repositories
 {
     public class TrackingRepository : ITrackingRepository
     {
-        private const string REMOVE_EXCEPTION = "Item could not be removed.";
-        private const string NOT_FOUND_IN_DB = "Item to remove was not found in DB.";
-        private const string REMOVE_FROM_DB_EXCEPTION = "Failed to remove item from DB.";
-        private const string USER_NOT_FOUND_EXCEPTION = "Failed to find user in DB";
-        private const string ITEM_NOT_FOUND_EXCEPTION = "Failed to find item in DB";
-
         private readonly IUpdateInfoHelper _updateInfoHelper;
 
         public TrackingRepository(IUpdateInfoHelper updateInfoHelper)
@@ -38,7 +33,7 @@ namespace PriceTracker.Repositories
         public async Task<bool> IsWaitingForAddAsync(int userId){
             using var _trackingContext = new TrackingContext();
             var userStatus = await _trackingContext.UserStatuses.Where(x => x.UserId == userId).FirstOrDefaultAsync() ??
-                throw new Exception($"{USER_NOT_FOUND_EXCEPTION}");
+                throw new Exception($"{Exceptions.USER_NOT_FOUND_EXCEPTION}");
             return userStatus.waitingForAdd;
         }
 
@@ -54,7 +49,7 @@ namespace PriceTracker.Repositories
         {
             using var _trackingContext = new TrackingContext();
             var userStatus = await _trackingContext.UserStatuses.Where(x => x.UserId == userId).FirstOrDefaultAsync() ??
-                throw new Exception($"{USER_NOT_FOUND_EXCEPTION}");
+                throw new Exception($"{Exceptions.USER_NOT_FOUND_EXCEPTION}");
             userStatus.waitingForAdd = newValue;
             await _trackingContext.SaveChangesAsync();
         }
@@ -77,7 +72,7 @@ namespace PriceTracker.Repositories
         {
             using var _trackingContext = new TrackingContext();
             var item = await _trackingContext.Items.Where(i => i.ItemId == itemUpdated.ItemId).FirstOrDefaultAsync() ??
-                throw new Exception($"{ITEM_NOT_FOUND_EXCEPTION}");
+                throw new Exception($"{Exceptions.ITEM_NOT_FOUND_EXCEPTION}");
             _updateInfoHelper.GetUpdatedItem(ref item, itemUpdated);
             await _trackingContext.SaveChangesAsync();
         }
@@ -93,14 +88,14 @@ namespace PriceTracker.Repositories
         {
             using var _trackingContext = new TrackingContext();
             var itemToRemove = await _trackingContext.Items.Where(x => x.Name.Equals(url)).FirstOrDefaultAsync() ?? 
-                throw new Exception($"{REMOVE_EXCEPTION} {NOT_FOUND_IN_DB}");
+                throw new Exception($"{Exceptions.REMOVE_EXCEPTION} {Exceptions.NOT_FOUND_IN_DB_EXCEPTION}");
 
             try
             {
                 _trackingContext.Items.Remove(itemToRemove);
             } catch (Exception ex)
             {
-                throw new Exception($"{REMOVE_EXCEPTION} {REMOVE_FROM_DB_EXCEPTION} {ex.Message}");
+                throw new Exception($"{Exceptions.REMOVE_EXCEPTION} {Exceptions.REMOVE_FROM_DB_EXCEPTION} {ex.Message}");
             }
             await _trackingContext.SaveChangesAsync();
         }

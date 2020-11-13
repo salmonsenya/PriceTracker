@@ -23,10 +23,7 @@ namespace PriceTracker.Services
         private readonly IShopDefiner _shopDefiner;
         private readonly ITimerService _timerService;
 
-        private const string UNKNOWN_SHOP_EXCEPTION = "Item could not be added for tracking. Unknown shop.";
-        private readonly string NEED_INLINE_LINK_EXCEPTION = $"Insert a link of item you want to add for tracking after command /{Commands.ADD} + space.";
-        private const string ALREADY_TRACKED_EXCEPTION = "Item is already added for tracking.";
-        private const string PARSE_NAME_EXCEPTION = "Failed to parse name of item to delete.";
+        public readonly string NEED_INLINE_LINK_EXCEPTION = $"Insert a link of item you want to add for tracking after command /{Commands.ADD} + space.";
 
         public ShopService(
             ITrackingRepository trackingRepository,
@@ -47,8 +44,7 @@ namespace PriceTracker.Services
         public async Task<List<Item>> GetTrackedItemsAsync(int userId)
         {
             var items = await _trackingRepository.GetItemsAsync();
-            var userItems = items.Where(x => x.UserId == userId).ToList();
-            return userItems;
+            return items.Where(x => x.UserId == userId).ToList();
         }
 
         public async Task<Item> AddNewItemAsync(Message message)
@@ -58,14 +54,14 @@ namespace PriceTracker.Services
                 throw new Exception(NEED_INLINE_LINK_EXCEPTION);
 
             if (await _trackingRepository.IsTrackedAsync(url, message.From.Id))
-                throw new Exception(ALREADY_TRACKED_EXCEPTION);
+                throw new Exception(Exceptions.ALREADY_TRACKED_EXCEPTION);
 
             var shopName = _shopDefiner.GetShopName(url);
             var newInfo = shopName switch
             {
                 PullAndBear.SHOP_NAME => await _pullAndBearClient.GetItemInfoAsync(url),
                 Bershka.SHOP_NAME => await _bershkaClient.GetItemInfoAsync(url),
-                _ => throw new Exception(UNKNOWN_SHOP_EXCEPTION),
+                _ => throw new Exception(Exceptions.UNKNOWN_SHOP_EXCEPTION),
             };
 
             var newItem = _mapper.Map<ItemOnline, Item>(newInfo);
@@ -88,7 +84,7 @@ namespace PriceTracker.Services
             var firstLine = itemText.Substring(0, itemText.IndexOf(Environment.NewLine));
 
             if (string.IsNullOrEmpty(firstLine))
-                throw new Exception(PARSE_NAME_EXCEPTION);
+                throw new Exception(Exceptions.PARSE_NAME_EXCEPTION);
 
             _timerService.RemoveFromQueue(firstLine);
 

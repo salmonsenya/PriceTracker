@@ -16,5 +16,7 @@ namespace PriceTracker.Services
         Task SendMessageMarkdownV2Async(long chatId, string text);
 
         Task SendMessageButtonMarkdownV2Async(long chatId, int replyToMessageId, string text);
+
+        Task SendMessageButtonMarkdownV2Async(long chatId, string text);
     }
 }

@@ -5,7 +5,7 @@ namespace PriceTracker.Helpers
 {
     public interface ITextConverter
     {
-        List<string> ToStrings(List<Item> items);
+        IEnumerable<string> ToStrings(List<Item> items);
 
         string ToString(Item item);
 
