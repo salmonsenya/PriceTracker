@@ -16,6 +16,13 @@ namespace PriceTracker.Repositories
         private const string USER_NOT_FOUND_EXCEPTION = "Failed to find user in DB";
         private const string ITEM_NOT_FOUND_EXCEPTION = "Failed to find item in DB";
 
+        private readonly IUpdateInfoHelper _updateInfoHelper;
+
+        public TrackingRepository(IUpdateInfoHelper updateInfoHelper)
+        {
+            _updateInfoHelper = updateInfoHelper;
+        }
+
         public bool IsUserStatusExists(int userId)
         {
             using var _trackingContext = new TrackingContext();
@@ -73,12 +80,7 @@ namespace PriceTracker.Repositories
             using var _trackingContext = new TrackingContext();
             var item = await _trackingContext.Items.Where(i => i.ItemId == itemUpdated.ItemId).FirstOrDefaultAsync() ??
                 throw new Exception($"{ITEM_NOT_FOUND_EXCEPTION}");
-            item.Status = itemUpdated.Status;
-            item.Price = itemUpdated.Price;
-            item.PriceCurrency = itemUpdated.PriceCurrency;
-            item.Name = itemUpdated.Name;
-            item.Image = itemUpdated.Image;
-            item.LastUpdateDate = itemUpdated.LastUpdateDate;
+            _updateInfoHelper.GetUpdatedItem(ref item, itemUpdated);
             await _trackingContext.SaveChangesAsync();
         }
 

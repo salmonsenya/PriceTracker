@@ -4,6 +4,8 @@ namespace PriceTracker.Helpers
 {
     public interface IUpdateInfoHelper
     {
-        Item GetUpdatedItem(Item item, ItemOnline newInfo);
+        void GetUpdatedItem(ref Item item, ItemOnline newInfo);
+
+        void GetUpdatedItem(ref Item item, Item newInfo);
     }
 }

@@ -11,8 +11,10 @@ namespace PriceTracker.Services
 {
     public class TimerService : ITimerService
     {
+        private readonly static int maxUpdateTimeIntervalHours = 24;
         private const string UNKNOWN_SHOP_EXCEPTION = "Item could not be added for tracking. Unknown shop.";
         private const string REMOVE_FROM_QUEUE_EXCEPTION = "Item could not be removed from queue.";
+        private readonly string CANT_UPDATE_EXCEPTION = $"Item info was not updated for {maxUpdateTimeIntervalHours} hours.";
 
         private Queue<Item> itemsQueue;
         private Timer timer;
@@ -86,7 +88,7 @@ namespace PriceTracker.Services
                     await _botService.SendMessageMarkdownV2Async(
                         item.ChatId,
                         _textConverter.ToString(item, newInfo));
-                item = _updateInfoHelper.GetUpdatedItem(item, newInfo);
+                _updateInfoHelper.GetUpdatedItem(ref item, newInfo);
                 await _trackingRepository.UpdateInfoOfItemAsync(item);
                 
             }
@@ -95,6 +97,10 @@ namespace PriceTracker.Services
                 // it's ok; lets update item information next time;
             }
             itemsQueue.Enqueue(item);
+            if ((DateTime.Now - item.LastUpdateDate).TotalHours > maxUpdateTimeIntervalHours)
+                await _botService.SendMessageAsync(
+                    item.ChatId,
+                    CANT_UPDATE_EXCEPTION);
         }
     }
 }
