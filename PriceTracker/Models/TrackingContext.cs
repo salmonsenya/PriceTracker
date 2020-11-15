@@ -4,12 +4,12 @@ namespace PriceTracker.Models
 {
     public class TrackingContext : DbContext
     {
+        public TrackingContext(DbContextOptions<TrackingContext> options)
+        : base(options)
+        { }
 
         public DbSet<Item> Items { get; set; }
 
         public DbSet<UserStatus> UserStatuses { get; set; }
-
-        protected override void OnConfiguring(DbContextOptionsBuilder options)
-            => options.UseMySql("Server=localhost;User Id=tracker-admin;Password=tracker-password;Database=TrackingItemsDb"); //_configuration.GetConnectionString("TrackingContext")
     }
 }
