@@ -105,7 +105,7 @@ PULL&BEAR and Bershka items are only available for tracking at this moment.
                                     if (message.From.Username != null)
                                         await _botService.SendMessageMarkdownV2Async(
                                             message.Chat.Id,
-                                             $@"[@{message.From.Username}](tg://user?id={message.From.Id}) {Exceptions.EMPTY_CART}");
+                                            $@"[@{message.From.Username}](tg://user?id={message.From.Id}) {Exceptions.EMPTY_CART}");
                                     else
                                         await _botService.SendMessageAsync(
                                             message.Chat.Id,
@@ -138,19 +138,19 @@ PULL&BEAR and Bershka items are only available for tracking at this moment.
                                                 $"{HELP_TEXT}");
                                 break;
                             default:
-                                if (isWaitingForAdd)
-                                {
-                                    var url = Regex.Match(input, Common.UrlTemplate).Value;
-                                    if (string.IsNullOrEmpty(url))
+                                var url = Regex.Match(input, Common.UrlTemplate).Value;
+                                if (string.IsNullOrEmpty(url))
+                                    if (isWaitingForAdd)
                                         throw new Exception(Exceptions.NEED_CORRECT_LINK_EXCEPTION);
+                                    else
+                                        return;
 
-                                    await _trackingRepository.SetWaitingForAddAsync(message.From.Id, false);
-                                    var newItem = await _shopService.AddNewItemAsync(message);
-                                    await _botService.SendMessageButtonMarkdownV2Async(
-                                        message.Chat.Id,
-                                        message.MessageId,
-                                        _textConverter.ToString(newItem));
-                                }
+                                await _trackingRepository.SetWaitingForAddAsync(message.From.Id, false);
+                                var newItem = await _shopService.AddNewItemAsync(message);
+                                await _botService.SendMessageButtonMarkdownV2Async(
+                                    message.Chat.Id,
+                                    message.MessageId,
+                                    _textConverter.ToString(newItem));
                                 break;
                         }
                 }
