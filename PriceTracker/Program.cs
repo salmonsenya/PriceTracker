@@ -14,7 +14,7 @@ namespace PriceTracker
             Host.CreateDefaultBuilder(args)
                 .ConfigureWebHostDefaults(webBuilder =>
                 {
-                    webBuilder.UseStartup<Startup>();
+                    webBuilder.UseUrls("https://localhost:3001;http://localhost:3000").UseStartup<Startup>();
                 });
     }
 }
