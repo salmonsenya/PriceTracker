@@ -13,7 +13,9 @@ namespace PriceTracker.Services
     public class TimerService : ITimerService
     {
         private readonly static int maxUpdateTimeIntervalHours = 24;
+        private readonly static int maxTimeWithoutUpdateIntervalHours = 72;
         private readonly string CANT_UPDATE_EXCEPTION = $"Item info was not updated for {maxUpdateTimeIntervalHours} hours.";
+        private readonly string WANNA_REMOVE_ITEM_EXCEPTION = $"Item info was not updated for {maxTimeWithoutUpdateIntervalHours} hours. Item will be removed.";
 
         private Queue<Item> itemsQueue;
         private Timer timer;
@@ -95,11 +97,21 @@ namespace PriceTracker.Services
             {
                 // it's ok; lets update item information next time;
             }
-            itemsQueue.Enqueue(item);
-            if ((DateTime.Now - item.LastUpdateDate).TotalHours > maxUpdateTimeIntervalHours)
+            if ((DateTime.Now - item.LastUpdateDate).TotalHours > maxTimeWithoutUpdateIntervalHours)
+            {
+                await _trackingRepository.RemoveItemAsync(item.Url);
                 await _botService.SendMessageAsync(
                     item.ChatId,
-                    CANT_UPDATE_EXCEPTION);
+                    WANNA_REMOVE_ITEM_EXCEPTION);
+            }
+            else
+            {
+                itemsQueue.Enqueue(item);
+                if ((DateTime.Now - item.LastUpdateDate).TotalHours > maxUpdateTimeIntervalHours)
+                    await _botService.SendMessageAsync(
+                        item.ChatId,
+                        CANT_UPDATE_EXCEPTION);
+            }
         }
     }
 }
