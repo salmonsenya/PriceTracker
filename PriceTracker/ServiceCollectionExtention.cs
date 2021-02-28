@@ -1,7 +1,9 @@
-﻿using Microsoft.Extensions.Configuration;
+﻿using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using PriceTracker.Clients;
 using PriceTracker.Helpers;
+using PriceTracker.Models;
 using PriceTracker.Repositories;
 using PriceTracker.Services;
 
@@ -27,6 +29,8 @@ namespace PriceTracker
             services.AddScoped<IShopService, ShopService>();
             services.AddScoped<ITimerService, TimerService>();
             services.AddScoped<IUpdateService, UpdateService>();
+            services.AddDbContext<TrackingContext>
+                (options => options.UseSqlServer("Server=localhost;Database=TrackingItemsDb;User Id=tracker-admin;Password=tracker-password"));
         }
     }
 }
