@@ -13,7 +13,14 @@
 # User-specific files (MonoDevelop/Xamarin Studio)
 *.userprefs
 
+appsettings.*
+*.dll
+PriceTracker.deps.json
+PriceTracker.exe
+web.config
+PriceTracker.runtimeconfig.json
 # Build results
+runtimes
 [Dd]ebug/
 [Dd]ebugPublic/
 [Rr]elease/

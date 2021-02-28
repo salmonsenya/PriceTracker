@@ -30,7 +30,7 @@ namespace PriceTracker
             services.AddScoped<ITimerService, TimerService>();
             services.AddScoped<IUpdateService, UpdateService>();
             services.AddDbContext<TrackingContext>
-                (options => options.UseSqlServer("Server=localhost;Database=TrackingItemsDb;User Id=tracker-admin;Password=tracker-password"));
+                (options => options.UseMySql("Server=localhost;Database=TrackingItemsDb;User Id=tracker-admin;Password=tracker-password"));
         }
     }
 }

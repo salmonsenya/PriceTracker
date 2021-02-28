@@ -1,4 +1,5 @@
 ﻿using System;
+using Microsoft.EntityFrameworkCore.Metadata;
 using Microsoft.EntityFrameworkCore.Migrations;
 
 namespace PriceTracker.Migrations
@@ -12,7 +13,7 @@ namespace PriceTracker.Migrations
                 columns: table => new
                 {
                     ItemId = table.Column<int>(nullable: false)
-                        .Annotation("SqlServer:Identity", "1, 1"),
+                        .Annotation("MySql:ValueGenerationStrategy", MySqlValueGenerationStrategy.IdentityColumn),
                     Url = table.Column<string>(nullable: true),
                     Name = table.Column<string>(nullable: true),
                     Image = table.Column<string>(nullable: true),
@@ -35,7 +36,7 @@ namespace PriceTracker.Migrations
                 columns: table => new
                 {
                     UserStatusId = table.Column<int>(nullable: false)
-                        .Annotation("SqlServer:Identity", "1, 1"),
+                        .Annotation("MySql:ValueGenerationStrategy", MySqlValueGenerationStrategy.IdentityColumn),
                     UserId = table.Column<int>(nullable: false),
                     waitingForAdd = table.Column<bool>(nullable: false)
                 },
