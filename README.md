@@ -6,10 +6,6 @@ Telegram бот на C#, ASP.NET Core 3.1, с использованием кл�
 
 В данный момент есть возможность добавлять товары из *PULL&BEAR* и *Bershka*.
 
-*Name*: *PriceTrackerBot*
-
-*Username*: *@sales_tracker_bot*
-
 * * *
 ### Setup
 + Мой [гайд](https://salmonsenya.github.io/RejoinderBot/) о том, как написать Telegram бот на ASP.Net Core и раскатить его на Linux сервере
